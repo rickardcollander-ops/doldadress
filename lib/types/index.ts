@@ -25,6 +25,7 @@ export interface Ticket {
 }
 
 export interface TicketContext {
+  [key: string]: any;
   stripe?: {
     customerId?: string;
     subscriptions?: any[];
