@@ -106,10 +106,10 @@ export class ContextAggregator {
 
     if (context.resend) {
       formatted += '=== Email History ===\n';
-      formatted += `Previous emails: ${context.resend.emailHistory?.length || 0}\n`;
-      if (context.resend.emailHistory && context.resend.emailHistory.length > 0) {
+      formatted += `Previous emails: ${context.resend.emailsSent || 0}\n`;
+      if (context.resend.recentEmails && context.resend.recentEmails.length > 0) {
         formatted += 'Recent emails:\n';
-        context.resend.emailHistory.slice(0, 5).forEach(email => {
+        context.resend.recentEmails.slice(0, 5).forEach((email: any) => {
           formatted += `  - ${email.subject} (${new Date(email.createdAt).toLocaleDateString()})\n`;
         });
       }
