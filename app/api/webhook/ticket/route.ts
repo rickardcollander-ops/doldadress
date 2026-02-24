@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     });
 
     const contextAggregator = new ContextAggregator();
-    const context = await contextAggregator.gatherContext(email, integrations);
+    const context = await contextAggregator.gatherContext(email, integrations as any);
 
     const ticket = await prisma.ticket.create({
       data: {
