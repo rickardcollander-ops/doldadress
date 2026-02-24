@@ -51,7 +51,8 @@ export class ResendService {
     try {
       const emailHistory = await this.getEmailHistory(email);
       return {
-        emailHistory,
+        emailsSent: emailHistory.length,
+        recentEmails: emailHistory,
       };
     } catch (error) {
       console.error('Error fetching Resend context:', error);
