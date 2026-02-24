@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Gather context for this customer
-      const context = await contextAggregator.gatherContext(email.from, integrations);
+      const context = await contextAggregator.gatherContext(email.from, integrations as any);
 
       // Create ticket
       const ticket = await prisma.ticket.create({
