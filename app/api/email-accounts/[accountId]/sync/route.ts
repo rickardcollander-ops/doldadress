@@ -7,9 +7,10 @@ import { ContextAggregator } from '@/lib/services/context-aggregator';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { accountId: string } }
+  { params }: { params: Promise<{ accountId: string }> }
 ) {
   try {
+    const { accountId } = await params;
     const session = await auth();
     
     if (!session?.user?.email) {
@@ -26,7 +27,7 @@ export async function POST(
 
     const emailAccount = await prisma.emailAccount.findFirst({
       where: {
-        id: params.accountId,
+        id: accountId,
         userId: user.id,
       },
     });

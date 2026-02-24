@@ -593,6 +593,10 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
                           <p className="text-slate-500 dark:text-slate-400 text-xs">Förfallodatum</p>
                           <p className="text-slate-900 dark:text-slate-100">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('sv-SE') : '-'}</p>
                         </div>
+                        <div>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs">Leveranssätt</p>
+                          <p className="text-slate-900 dark:text-slate-100">{inv.deliveryMethod || '-'}</p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -637,6 +641,7 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
                                 <div className="flex gap-4 mt-1 text-xs text-slate-600 dark:text-slate-300">
                                   <span>Belopp: {inv.currentAmount ?? '-'} kr</span>
                                   <span>Förfaller: {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('sv-SE') : '-'}</span>
+                                  {inv.deliveryMethod && <span>Leverans: {inv.deliveryMethod}</span>}
                                 </div>
                               </div>
                             ))}
@@ -704,6 +709,7 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
                           <div className="flex gap-4 text-xs text-slate-600 dark:text-slate-300">
                             <span>Belopp: {inv.amount ?? '-'} kr</span>
                             <span>Förfaller: {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('sv-SE') : '-'}</span>
+                            {inv.deliveryMethod && <span>Leverans: {inv.deliveryMethod}</span>}
                           </div>
                         </div>
                       ))}

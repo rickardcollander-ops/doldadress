@@ -118,6 +118,7 @@ export class BillectaService {
           amount: inv.CurrentAmount?.ValueForView ?? inv.InvoicedAmount?.ValueForView ?? null,
           dueDate: inv.DueDate,
           isPaid: inv.Stage === 'Completed',
+          deliveryMethod: inv.DeliveryMethod || null,
         })),
       };
     } catch (error) {

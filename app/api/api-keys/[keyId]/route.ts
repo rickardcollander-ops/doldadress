@@ -3,9 +3,10 @@ import { prisma } from '@/lib/db/client';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { keyId: string } }
+  { params }: { params: Promise<{ keyId: string }> }
 ) {
   try {
+    const { keyId } = await params;
     const host = request.headers.get('host') || '';
     const subdomain = host.split('.')[0].replace(':3001', '').replace('localhost', 'doldadress');
     
@@ -19,7 +20,7 @@ export async function DELETE(
 
     await prisma.apiKey.delete({
       where: {
-        id: params.keyId,
+        id: keyId,
         tenantId: tenant.id,
       },
     });
@@ -33,9 +34,10 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { keyId: string } }
+  { params }: { params: Promise<{ keyId: string }> }
 ) {
   try {
+    const { keyId } = await params;
     const host = request.headers.get('host') || '';
     const subdomain = host.split('.')[0].replace(':3001', '').replace('localhost', 'doldadress');
     
@@ -51,7 +53,7 @@ export async function PATCH(
 
     const apiKey = await prisma.apiKey.update({
       where: {
-        id: params.keyId,
+        id: keyId,
         tenantId: tenant.id,
       },
       data: { isActive },

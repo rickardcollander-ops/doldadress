@@ -25,6 +25,7 @@ type BillectaInvoice = {
   amount?: number | string;
   dueDate?: string;
   isPaid?: boolean;
+  deliveryMethod?: string;
 };
 
 type BillectaContextPayload = {
@@ -116,6 +117,7 @@ export async function GET(
           amount: inv.amount,
           dueDate: inv.dueDate,
           isPaid: inv.isPaid,
+          deliveryMethod: inv.deliveryMethod,
         }));
 
         return {

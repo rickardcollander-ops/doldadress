@@ -136,6 +136,7 @@ export async function POST(request: NextRequest) {
                   dueDate: inv.DueDate,
                   currentAmount: inv.CurrentAmount?.ValueForView ?? null,
                   isPaid: inv.Stage === 'Completed',
+                  deliveryMethod: inv.DeliveryMethod || null,
                 })),
               };
             })
@@ -204,6 +205,7 @@ export async function POST(request: NextRequest) {
                 dueDate: inv.DueDate,
                 currentAmount: inv.CurrentAmount?.ValueForView ?? null,
                 isPaid: inv.Stage === 'Completed',
+                deliveryMethod: inv.DeliveryMethod || null,
               })),
             };
           })

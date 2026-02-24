@@ -67,10 +67,10 @@ async function billectaProbe(creditorPublicId: string, apiKey: string) {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const email = typeof body?.email === 'string' && body.email.trim().length > 0
       ? body.email.trim()

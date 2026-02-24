@@ -69,14 +69,14 @@ function formatContextForPrompt(contextData: any): string {
     if (unpaid.length > 0) {
       formatted += `\nObetalda fakturor (${unpaid.length}):\n`;
       unpaid.forEach((inv: any) => {
-        formatted += `  - Faktura #${inv.number || inv.id}: ${inv.amount ?? '?'} kr, förfaller ${inv.dueDate || 'okänt'}, status: ${inv.status || 'okänd'}\n`;
+        formatted += `  - Faktura #${inv.number || inv.id}: ${inv.amount ?? '?'} kr, förfaller ${inv.dueDate || 'okänt'}, status: ${inv.status || 'okänd'}${inv.deliveryMethod ? `, leverans: ${inv.deliveryMethod}` : ''}\n`;
       });
     }
 
     if (paid.length > 0) {
       formatted += `\nBetalda fakturor (${paid.length}):\n`;
       paid.slice(0, 5).forEach((inv: any) => {
-        formatted += `  - Faktura #${inv.number || inv.id}: ${inv.amount ?? '?'} kr, status: ${inv.status || 'betald'}\n`;
+        formatted += `  - Faktura #${inv.number || inv.id}: ${inv.amount ?? '?'} kr, status: ${inv.status || 'betald'}${inv.deliveryMethod ? `, leverans: ${inv.deliveryMethod}` : ''}\n`;
       });
       if (paid.length > 5) formatted += `  ... och ${paid.length - 5} till\n`;
     }

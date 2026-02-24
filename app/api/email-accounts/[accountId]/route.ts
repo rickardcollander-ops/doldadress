@@ -4,9 +4,10 @@ import { prisma } from '@/lib/db/client';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { accountId: string } }
+  { params }: { params: Promise<{ accountId: string }> }
 ) {
   try {
+    const { accountId } = await params;
     const session = await auth();
     
     if (!session?.user?.email) {
@@ -23,7 +24,7 @@ export async function DELETE(
 
     const account = await prisma.emailAccount.findFirst({
       where: {
-        id: params.accountId,
+        id: accountId,
         userId: user.id,
       },
       select: { id: true },

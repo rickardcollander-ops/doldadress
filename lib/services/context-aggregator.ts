@@ -97,7 +97,7 @@ export class ContextAggregator {
       if (unpaidBillecta.length > 0) {
         formatted += `Unpaid Invoices: ${unpaidBillecta.length}\n`;
         unpaidBillecta.forEach(inv => {
-          formatted += `  - Invoice #${inv.number}: ${inv.amount} (Due: ${inv.dueDate})\n`;
+          formatted += `  - Invoice #${inv.number}: ${inv.amount} (Due: ${inv.dueDate})${inv.deliveryMethod ? ` [${inv.deliveryMethod}]` : ''}\n`;
         });
       }
       formatted += '\n';
