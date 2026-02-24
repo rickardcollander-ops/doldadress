@@ -14,7 +14,13 @@ async function getEmailAccounts(userEmail: string) {
       },
     });
 
-    return user?.emailAccounts || [];
+    return user?.emailAccounts.map(account => ({
+      ...account,
+      createdAt: account.createdAt.toISOString(),
+      updatedAt: account.updatedAt.toISOString(),
+      lastSyncAt: account.lastSyncAt?.toISOString() || null,
+      expiresAt: account.expiresAt?.toISOString() || null,
+    })) || [];
   } catch (error) {
     console.error('Error fetching email accounts:', error);
     return [];
