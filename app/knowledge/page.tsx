@@ -1,0 +1,121 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import KnowledgeList from '@/components/KnowledgeList';
+import KnowledgeEditor from '@/components/KnowledgeEditor';
+import type { KnowledgeBase } from '@/lib/types';
+
+export default function KnowledgePage() {
+  const [articles, setArticles] = useState<KnowledgeBase[]>([]);
+  const [selectedArticle, setSelectedArticle] = useState<KnowledgeBase | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const fetchArticles = async () => {
+    try {
+      const response = await fetch('/api/knowledge');
+      if (response.ok) {
+        const data = await response.json();
+        setArticles(data.articles);
+      }
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = () => {
+    setIsCreating(true);
+    setSelectedArticle(null);
+  };
+
+  const handleSave = async (article: Partial<KnowledgeBase>) => {
+    try {
+      const url = selectedArticle ? `/api/knowledge/${selectedArticle.id}` : '/api/knowledge';
+      const method = selectedArticle ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(article),
+      });
+
+      if (response.ok) {
+        const savedArticle = await response.json();
+        if (selectedArticle) {
+          setArticles(articles.map(a => a.id === savedArticle.id ? savedArticle : a));
+        } else {
+          setArticles([savedArticle, ...articles]);
+        }
+        setIsCreating(false);
+        setSelectedArticle(null);
+      }
+    } catch (error) {
+      console.error('Error saving article:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this article?')) return;
+
+    try {
+      const response = await fetch(`/api/knowledge/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setArticles(articles.filter(a => a.id !== id));
+        if (selectedArticle?.id === id) {
+          setSelectedArticle(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting article:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsCreating(false);
+    setSelectedArticle(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-slate-600 dark:text-slate-400">Loading knowledge base...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-8rem)]">
+      <div className="lg:col-span-1 overflow-auto">
+        <KnowledgeList
+          articles={articles}
+          selectedArticle={selectedArticle}
+          onSelectArticle={setSelectedArticle}
+          onCreateNew={handleCreate}
+        />
+      </div>
+      <div className="lg:col-span-2 overflow-auto">
+        {isCreating || selectedArticle ? (
+          <KnowledgeEditor
+            article={selectedArticle}
+            onSave={handleSave}
+            onDelete={selectedArticle ? handleDelete : undefined}
+            onCancel={handleCancel}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
+            Select an article or create a new one
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

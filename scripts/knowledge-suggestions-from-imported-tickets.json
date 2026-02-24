@@ -1,0 +1,230 @@
+{
+  "generatedAt": "2026-02-24T09:05:22.031Z",
+  "tenant": "doldadress",
+  "importedTicketCount": 400,
+  "chunks": 20,
+  "articles": [
+    {
+      "title": "Så byter du betalningsmetod från faktura till kort",
+      "category": "billing",
+      "tags": [
+        "betalningsmetod",
+        "faktura",
+        "kundsupport"
+      ],
+      "problemSummary": "Många kunder har frågor om hur de kan ändra sin betalningsmetod.",
+      "recommendedContentOutline": [
+        "Steg-för-steg guide för att byta betalningsmetod.",
+        "Vanliga frågor och svar.",
+        "Kontaktinformation för support."
+      ],
+      "exampleMacroReply": "Hej! För att byta betalningsmetod från faktura till kort, följ dessa steg: [steg]. Om du har fler frågor, tveka inte att kontakta oss.",
+      "priority": "high",
+      "sourceSignals": [
+        "Hur byter jag från faktura till kortbetalning?"
+      ]
+    },
+    {
+      "title": "Guide för att dölja dina uppgifter online",
+      "category": "privacy",
+      "tags": [
+        "doldadress",
+        "avindexering",
+        "kundsupport"
+      ],
+      "problemSummary": "Kunder behöver hjälp med att förstå hur de kan dölja sina uppgifter från sökmotorer.",
+      "recommendedContentOutline": [
+        "Vad innebär dolda uppgifter?",
+        "Steg för att dölja uppgifter.",
+        "Tidsramar för avindexering."
+      ],
+      "exampleMacroReply": "Hej! För att dölja dina uppgifter online, följ dessa steg: [steg]. Om du har fler frågor, kontakta oss gärna.",
+      "priority": "high",
+      "sourceSignals": [
+        "Hur döljer jag mina uppgifter från sökresultat?"
+      ]
+    },
+    {
+      "title": "Vad göra om du fortfarande ser dina uppgifter efter avindexering?",
+      "category": "privacy",
+      "tags": [
+        "avindexering",
+        "kundsupport",
+        "doldadress"
+      ],
+      "problemSummary": "Det är viktigt att kunder vet vad de ska göra om deras uppgifter fortfarande är synliga.",
+      "recommendedContentOutline": [
+        "Förstå avindexeringsprocessen.",
+        "Steg att ta om uppgifter fortfarande syns.",
+        "Kontaktinformation för vidare hjälp."
+      ],
+      "exampleMacroReply": "Hej! Om du fortfarande ser dina uppgifter efter avindexering, vänligen följ dessa steg: [steg]. Kontakta oss gärna för mer hjälp.",
+      "priority": "high",
+      "sourceSignals": [
+        "Vad gör jag om jag fortfarande ser mina uppgifter online?"
+      ]
+    },
+    {
+      "title": "Hur avslutar du dina tjänster och undviker fakturor?",
+      "category": "cancellation",
+      "tags": [
+        "uppsägning",
+        "fakturor",
+        "kundsupport"
+      ],
+      "problemSummary": "Kunder behöver veta hur de kan avsluta sina tjänster korrekt.",
+      "recommendedContentOutline": [
+        "Steg för att avsluta tjänster.",
+        "Vad händer med fakturor efter uppsägning?",
+        "Vanliga frågor och svar."
+      ],
+      "exampleMacroReply": "Hej! För att avsluta dina tjänster och undvika fakturor, följ dessa steg: [steg]. Kontakta oss om du har fler frågor.",
+      "priority": "high",
+      "sourceSignals": [
+        "Hur avslutar jag mina tjänster?",
+        "Varför får jag fakturor när jag sagt upp mitt abonnemang?"
+      ]
+    },
+    {
+      "title": "Så tar du bort falska konton på sociala medier",
+      "category": "privacy",
+      "tags": [
+        "identitetsskydd",
+        "socialamedier",
+        "kundsupport"
+      ],
+      "problemSummary": "Kunder behöver vägledning för att hantera identitetsstöld.",
+      "recommendedContentOutline": [
+        "Identifiera falska konton.",
+        "Steg för att ta bort konton.",
+        "Kontaktinformation för support."
+      ],
+      "exampleMacroReply": "Hej! För att ta bort falska konton på sociala medier, följ dessa steg: [steg]. Kontakta oss gärna för mer hjälp.",
+      "priority": "medium",
+      "sourceSignals": [
+        "Hur kan jag ta bort ett konto på sociala medier som skapats i mitt namn?"
+      ]
+    },
+    {
+      "title": "Förstå din faktura och vad som händer efter uppsägning",
+      "category": "billing",
+      "tags": [
+        "fakturering",
+        "uppsägning",
+        "kundsupport"
+      ],
+      "problemSummary": "Kunder behöver tydlig information om fakturering efter uppsägning.",
+      "recommendedContentOutline": [
+        "Vad som ingår i fakturan.",
+        "Vad händer efter uppsägning?",
+        "Vanliga frågor och svar."
+      ],
+      "exampleMacroReply": "Hej! För att förstå din faktura och vad som händer efter uppsägning, vänligen se följande information: [information]. Kontakta oss om du har fler frågor.",
+      "priority": "medium",
+      "sourceSignals": [
+        "Klarhet kring fakturering efter uppsägning av tjänster."
+      ]
+    },
+    {
+      "title": "Så här blir du dold på upplysningstjänster",
+      "category": "privacy",
+      "tags": [
+        "doldadress",
+        "upplysningstjänster",
+        "kundsupport"
+      ],
+      "problemSummary": "Många kunder har problem med att förstå processen för att bli dolda.",
+      "recommendedContentOutline": [
+        "Vad innebär dolda uppgifter?",
+        "Steg för att bli dold.",
+        "Tidsramar och förväntningar."
+      ],
+      "exampleMacroReply": "Hej! För att bli dold på upplysningstjänster, följ dessa steg: [steg]. Kontakta oss gärna för mer hjälp.",
+      "priority": "medium",
+      "sourceSignals": [
+        "Varför är jag fortfarande synlig på upplysning.se?"
+      ]
+    },
+    {
+      "title": "Guide till ångerrätt och uppsägning av abonnemang",
+      "category": "cancellation",
+      "tags": [
+        "ångerrätt",
+        "uppsägning",
+        "kundsupport"
+      ],
+      "problemSummary": "Det finns en stor efterfrågan på information om hur man säger upp sitt abonnemang.",
+      "recommendedContentOutline": [
+        "Vad är ångerrätt?",
+        "Steg för att säga upp abonnemang.",
+        "Vanliga frågor och svar."
+      ],
+      "exampleMacroReply": "Hej! För att utnyttja din ångerrätt och säga upp ditt abonnemang, följ dessa steg: [steg]. Kontakta oss om du har fler frågor.",
+      "priority": "medium",
+      "sourceSignals": [
+        "Hur säger jag upp mitt abonnemang?",
+        "Vad gäller för min ångerrätt?"
+      ]
+    },
+    {
+      "title": "Vanliga tekniska problem och lösningar",
+      "category": "technical",
+      "tags": [
+        "teknisk support",
+        "problem",
+        "lösningar"
+      ],
+      "problemSummary": "Kunder rapporterar ofta tekniska problem, och en artikel kan hjälpa dem att lösa dessa snabbare.",
+      "recommendedContentOutline": [
+        "Lista över vanliga tekniska problem.",
+        "Lösningar för varje problem.",
+        "Kontaktinformation för teknisk support."
+      ],
+      "exampleMacroReply": "Hej! Här är en lista över vanliga tekniska problem och deras lösningar: [problem och lösningar]. Kontakta oss gärna för mer hjälp.",
+      "priority": "medium",
+      "sourceSignals": [
+        "Hur kan jag få hjälp med tekniska problem?"
+      ]
+    },
+    {
+      "title": "Avindexering: Vad du behöver veta",
+      "category": "privacy",
+      "tags": [
+        "avindexering",
+        "kundsupport",
+        "information"
+      ],
+      "problemSummary": "Många kunder är osäkra på hur avindexering fungerar och vad som krävs.",
+      "recommendedContentOutline": [
+        "Vad är avindexering?",
+        "Steg för att begära avindexering.",
+        "Tidsramar och förväntningar."
+      ],
+      "exampleMacroReply": "Hej! För att förstå avindexering och vad som krävs, vänligen se följande information: [information]. Kontakta oss om du har fler frågor.",
+      "priority": "medium",
+      "sourceSignals": [
+        "Hur kan jag avindexera mina uppgifter från Google?"
+      ]
+    },
+    {
+      "title": "Fakturasupport: Vanliga frågor och svar",
+      "category": "billing",
+      "tags": [
+        "fakturor",
+        "support",
+        "vanliga frågor"
+      ],
+      "problemSummary": "Kunder har frågor kring fakturor, och en artikel kan ge dem snabb hjälp.",
+      "recommendedContentOutline": [
+        "Vanliga fakturafrågor.",
+        "Svar och lösningar.",
+        "Kontaktinformation för fakturasupport."
+      ],
+      "exampleMacroReply": "Hej! Här är svar på vanliga frågor om fakturor: [frågor och svar]. Kontakta oss gärna för mer hjälp.",
+      "priority": "low",
+      "sourceSignals": [
+        "Hur hanterar jag fakturor?"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,335 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import TicketList from '@/components/TicketList';
+import TicketDetail from '@/components/TicketDetail';
+import type { Ticket } from '@/lib/types';
+
+interface EmailSyncStatus {
+  lastSyncAt: Date | null;
+  totalNewTickets: number;
+  syncedAccounts: number;
+  error: string | null;
+}
+
+export default function TicketsPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeStatus, setActiveStatus] = useState<string>('all');
+  const [emailSyncStatus, setEmailSyncStatus] = useState<EmailSyncStatus>({
+    lastSyncAt: null,
+    totalNewTickets: 0,
+    syncedAccounts: 0,
+    error: null,
+  });
+
+  const triggerEmailSync = async () => {
+    try {
+      const response = await fetch('/api/email-accounts/sync-all', { method: 'POST' });
+
+      if (!response.ok) {
+        setEmailSyncStatus((prev) => ({
+          ...prev,
+          lastSyncAt: new Date(),
+          error: `Email sync failed (HTTP ${response.status})`,
+        }));
+        return;
+      }
+
+      const data = await response.json();
+      setEmailSyncStatus({
+        lastSyncAt: new Date(),
+        totalNewTickets: Number(data?.totalNewTickets || 0),
+        syncedAccounts: Number(data?.syncedAccounts || 0),
+        error: null,
+      });
+    } catch (error) {
+      console.error('Error syncing email accounts:', error);
+      setEmailSyncStatus((prev) => ({
+        ...prev,
+        lastSyncAt: new Date(),
+        error: 'Email sync failed',
+      }));
+    }
+  };
+
+  useEffect(() => {
+    fetchTickets();
+    triggerEmailSync();
+    
+    // Poll for updates every 3 seconds to catch AI responses being generated
+    const interval = setInterval(() => {
+      fetchTickets();
+    }, 3000);
+
+    // Pull unread emails from all connected Gmail accounts periodically
+    const emailSyncInterval = setInterval(() => {
+      triggerEmailSync();
+    }, 60000);
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(emailSyncInterval);
+    };
+  }, []);
+
+  const fetchTickets = async () => {
+    try {
+      const response = await fetch('/api/tickets');
+      if (response.ok) {
+        const data = await response.json();
+        setTickets(data.tickets);
+        
+        // Update selected ticket if it exists in the new data
+        if (selectedTicket) {
+          const updatedSelected = data.tickets.find((t: Ticket) => t.id === selectedTicket.id);
+          if (updatedSelected) {
+            setSelectedTicket(updatedSelected);
+          }
+        }
+      } else {
+        // Use mock data if API fails
+        setTickets([
+          {
+            id: 'mock-1',
+            tenantId: 'doldadress',
+            customerEmail: 'customer@example.com',
+            customerName: 'Test Customer',
+            subject: 'Test ticket with integration data',
+            status: 'new',
+            priority: 'normal',
+            originalMessage: 'This is a test ticket to demonstrate integration info cards.',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            contextData: {
+              stripe: {
+                customerId: 'cus_test123',
+                subscriptions: [{ id: 'sub_1' }, { id: 'sub_2' }],
+                invoices: [{ id: 'inv_1' }, { id: 'inv_2' }, { id: 'inv_3' }],
+                charges: [{ id: 'ch_1' }, { id: 'ch_2' }],
+              },
+              billecta: {
+                debtorId: 'debtor_123',
+                invoices: [{ id: 'bill_1' }, { id: 'bill_2' }],
+              },
+              resend: {
+                emailsSent: 15,
+                recentEmails: [{ id: 'email_1' }, { id: 'email_2' }, { id: 'email_3' }],
+              },
+              retool: {
+                customData: 'Available',
+              },
+            },
+          },
+        ] as any);
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+      // Use mock data on error
+      setTickets([
+        {
+          id: 'mock-1',
+          tenantId: 'doldadress',
+          customerEmail: 'customer@example.com',
+          customerName: 'Test Customer',
+          subject: 'Test ticket with integration data',
+          status: 'new',
+          priority: 'normal',
+          originalMessage: 'This is a test ticket to demonstrate integration info cards.',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          contextData: {
+            stripe: {
+              customerId: 'cus_test123',
+              subscriptions: [{ id: 'sub_1' }, { id: 'sub_2' }],
+              invoices: [{ id: 'inv_1' }, { id: 'inv_2' }, { id: 'inv_3' }],
+              charges: [{ id: 'ch_1' }, { id: 'ch_2' }],
+            },
+            billecta: {
+              debtorId: 'debtor_123',
+              invoices: [{ id: 'bill_1' }, { id: 'bill_2' }],
+            },
+            resend: {
+              emailsSent: 15,
+              recentEmails: [{ id: 'email_1' }, { id: 'email_2' }, { id: 'email_3' }],
+            },
+            gmail: {
+              totalEmails: 42,
+              recentEmails: [{ id: 'thread_1' }, { id: 'thread_2' }, { id: 'thread_3' }, { id: 'thread_4' }],
+            },
+            retool: {
+              customData: 'Available',
+            },
+          },
+        },
+      ] as any);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTicketUpdate = async (ticketId: string, updates: Partial<Ticket>) => {
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+
+      if (response.ok) {
+        const updatedTicket = await response.json();
+        setTickets(tickets.map(t => t.id === ticketId ? updatedTicket : t));
+        if (selectedTicket?.id === ticketId) {
+          setSelectedTicket(updatedTicket);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+    }
+  };
+
+  const handleGenerateAIResponse = async (ticketId: string): Promise<string | null> => {
+    try {
+      const response = await fetch(`/api/tickets/${ticketId}/generate-response`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const updatedTicket = await response.json();
+        setTickets(tickets.map(t => t.id === ticketId ? updatedTicket : t));
+        if (selectedTicket?.id === ticketId) {
+          setSelectedTicket(updatedTicket);
+        }
+        return updatedTicket.aiResponse || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      return null;
+    }
+  };
+
+  const handleSendResponse = async (ticketId: string, response: string, fromAccountId?: string) => {
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response, fromAccountId }),
+      });
+
+      if (res.ok) {
+        const updatedTicket = await res.json();
+        setTickets(tickets.map(t => t.id === ticketId ? updatedTicket : t));
+        if (selectedTicket?.id === ticketId) {
+          setSelectedTicket(updatedTicket);
+        }
+      }
+    } catch (error) {
+      console.error('Error sending response:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-slate-600 dark:text-slate-400">Loading tickets...</div>
+      </div>
+    );
+  }
+
+  const filteredTickets = activeStatus === 'all' 
+    ? tickets 
+    : tickets.filter(t => t.status === activeStatus);
+
+  const statusCounts = {
+    all: tickets.length,
+    new: tickets.filter(t => t.status === 'new').length,
+    in_progress: tickets.filter(t => t.status === 'in_progress').length,
+    review: tickets.filter(t => t.status === 'review').length,
+    sent: tickets.filter(t => t.status === 'sent').length,
+    closed: tickets.filter(t => t.status === 'closed').length,
+  };
+
+  const tabs = [
+    { id: 'all', label: 'Alla', count: statusCounts.all },
+    { id: 'new', label: 'Nya', count: statusCounts.new },
+    { id: 'in_progress', label: 'Pågående', count: statusCounts.in_progress },
+    { id: 'review', label: 'Granskning', count: statusCounts.review },
+    { id: 'sent', label: 'Skickade', count: statusCounts.sent },
+    { id: 'closed', label: 'Stängda', count: statusCounts.closed },
+  ];
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-8rem)]">
+      {/* Tab Navigation */}
+      <div className="mb-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex gap-1 overflow-x-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveStatus(tab.id)}
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-all ${
+                activeStatus === tab.id
+                  ? 'text-[#7C5CFF] border-b-2 border-[#7C5CFF] bg-[#7C5CFF]/5'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              {tab.label}
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                activeStatus === tab.id
+                  ? 'bg-[#7C5CFF] text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tickets Grid */}
+      <div className="mb-4">
+        <div className={`text-xs px-3 py-2 rounded-md border ${
+          emailSyncStatus.error
+            ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300'
+            : 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300'
+        }`}>
+          {emailSyncStatus.error ? (
+            <span>{emailSyncStatus.error}</span>
+          ) : (
+            <span>
+              Senaste e-postsynk: {emailSyncStatus.lastSyncAt ? emailSyncStatus.lastSyncAt.toLocaleTimeString('sv-SE') : 'inte körd än'}
+              {' '}• Nya tickets: {emailSyncStatus.totalNewTickets}
+              {' '}• Konton: {emailSyncStatus.syncedAccounts}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+        <div className="lg:col-span-1 overflow-auto">
+          <TicketList
+            tickets={filteredTickets}
+            selectedTicket={selectedTicket}
+            onSelectTicket={setSelectedTicket}
+          />
+        </div>
+        <div className="lg:col-span-2 overflow-auto">
+          {selectedTicket ? (
+            <TicketDetail
+              ticket={selectedTicket}
+              onUpdate={handleTicketUpdate}
+              onGenerateAI={handleGenerateAIResponse}
+              onSend={handleSendResponse}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
+              Select a ticket to view details
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

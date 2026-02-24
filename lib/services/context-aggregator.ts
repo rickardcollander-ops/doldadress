@@ -1,0 +1,120 @@
+import { StripeService } from '../integrations/stripe';
+import { BillectaService } from '../integrations/billecta';
+import { RetoolService } from '../integrations/retool';
+import { ResendService } from '../integrations/resend';
+import type { Integration, TicketContext } from '../types/tenant';
+
+export class ContextAggregator {
+  async gatherContext(
+    customerEmail: string,
+    integrations: Integration[]
+  ): Promise<TicketContext> {
+    const context: TicketContext = {};
+    const normalizedEmail = customerEmail.trim().toLowerCase();
+
+    const promises = integrations
+      .filter(i => i.isActive)
+      .map(async (integration) => {
+        try {
+          switch (integration.type) {
+            case 'stripe':
+              const stripeService = new StripeService(integration.credentials.apiKey);
+              const stripeData = await stripeService.getCustomerContext(normalizedEmail);
+              if (stripeData) context.stripe = stripeData;
+              break;
+
+            case 'billecta':
+              const billectaService = new BillectaService(
+                integration.credentials.apiKey,
+                integration.credentials.creditorPublicId
+              );
+              const billectaData = await billectaService.getCustomerContext(normalizedEmail);
+              if (billectaData) context.billecta = billectaData;
+              break;
+
+            case 'retool':
+              const retoolService = new RetoolService(
+                integration.credentials.apiKey,
+                integration.credentials.workspaceUrl
+              );
+              const retoolData = await retoolService.getCustomerContext(normalizedEmail);
+              if (retoolData) context.retool = retoolData;
+              break;
+
+            case 'resend':
+              const resendService = new ResendService(
+                integration.credentials.apiKey,
+                integration.credentials.fromEmail
+              );
+              const resendData = await resendService.getCustomerContext(normalizedEmail);
+              if (resendData) context.resend = resendData;
+              break;
+
+            case 'gmail':
+              const gmailService = new GmailService({
+                clientId: integration.credentials.clientId,
+                clientSecret: integration.credentials.clientSecret,
+                refreshToken: integration.credentials.refreshToken,
+              });
+              const gmailData = await gmailService.getCustomerContext(normalizedEmail);
+              if (gmailData) context.gmail = gmailData;
+              break;
+          }
+        } catch (error) {
+          console.error(`Error gathering context from ${integration.type}:`, error);
+        }
+      });
+
+    await Promise.all(promises);
+    return context;
+  }
+
+  formatContextForAI(context: TicketContext): string {
+    let formatted = 'Customer Context:\n\n';
+
+    if (context.stripe) {
+      formatted += '=== Stripe ===\n';
+      formatted += `Customer ID: ${context.stripe.customerId}\n`;
+      formatted += `Active Subscriptions: ${context.stripe.subscriptions?.length || 0}\n`;
+      if (context.stripe.subscriptions && context.stripe.subscriptions.length > 0) {
+        formatted += 'Subscriptions:\n';
+        context.stripe.subscriptions.forEach(sub => {
+          formatted += `  - Status: ${sub.status}, Period ends: ${new Date(sub.currentPeriodEnd * 1000).toLocaleDateString()}\n`;
+        });
+      }
+      formatted += `Total Invoices: ${context.stripe.invoices?.length || 0}\n`;
+      const unpaidInvoices = context.stripe.invoices?.filter(inv => !inv.paid) || [];
+      if (unpaidInvoices.length > 0) {
+        formatted += `Unpaid Invoices: ${unpaidInvoices.length}\n`;
+      }
+      formatted += '\n';
+    }
+
+    if (context.billecta) {
+      formatted += '=== Billecta ===\n';
+      formatted += `Total Invoices: ${context.billecta.invoices?.length || 0}\n`;
+      const unpaidBillecta = context.billecta.invoices?.filter(inv => !inv.isPaid) || [];
+      if (unpaidBillecta.length > 0) {
+        formatted += `Unpaid Invoices: ${unpaidBillecta.length}\n`;
+        unpaidBillecta.forEach(inv => {
+          formatted += `  - Invoice #${inv.number}: ${inv.amount} (Due: ${inv.dueDate})\n`;
+        });
+      }
+      formatted += '\n';
+    }
+
+    if (context.resend) {
+      formatted += '=== Email History ===\n';
+      formatted += `Previous emails: ${context.resend.emailHistory?.length || 0}\n`;
+      if (context.resend.emailHistory && context.resend.emailHistory.length > 0) {
+        formatted += 'Recent emails:\n';
+        context.resend.emailHistory.slice(0, 5).forEach(email => {
+          formatted += `  - ${email.subject} (${new Date(email.createdAt).toLocaleDateString()})\n`;
+        });
+      }
+      formatted += '\n';
+    }
+
+    return formatted;
+  }
+}

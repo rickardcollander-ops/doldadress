@@ -1,0 +1,228 @@
+export default function ApiDocsPage() {
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">API Documentation</h1>
+        <p className="text-slate-600 dark:text-slate-400">
+          Complete reference for the Doldadress Support API
+        </p>
+      </div>
+
+      {/* Authentication */}
+      <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">Authentication</h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-4">
+          All API requests require authentication using an API key. Include your API key in the request header:
+        </p>
+        <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto">
+          <code>{`X-API-Key: dold_your_api_key_here
+
+# Or using Authorization header
+Authorization: Bearer dold_your_api_key_here`}</code>
+        </pre>
+      </section>
+
+      {/* Base URL */}
+      <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">Base URL</h2>
+        <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg">
+          <code>https://your-subdomain.doldadress.com/api</code>
+        </pre>
+      </section>
+
+      {/* Endpoints */}
+      <section className="space-y-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Endpoints</h2>
+
+        {/* Create Ticket */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded font-mono text-sm font-semibold">
+              POST
+            </span>
+            <code className="text-lg font-mono text-slate-900 dark:text-slate-100">/tickets</code>
+          </div>
+          
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Create a new support ticket</p>
+          
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Request Body</h4>
+          <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto mb-4">
+            <code>{`{
+  "customerEmail": "customer@example.com",
+  "customerName": "John Doe",
+  "subject": "Need help with billing",
+  "message": "I have a question about my invoice...",
+  "priority": "normal" // optional: low, normal, high, urgent
+}`}</code>
+          </pre>
+
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Response</h4>
+          <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto">
+            <code>{`{
+  "id": "cmlb49srj00003se5j3w",
+  "tenantId": "cmlb49srj00003se5",
+  "customerEmail": "customer@example.com",
+  "customerName": "John Doe",
+  "subject": "Need help with billing",
+  "status": "new",
+  "priority": "normal",
+  "originalMessage": "I have a question about my invoice...",
+  "aiResponse": "Thank you for reaching out...",
+  "aiConfidence": 0.92,
+  "createdAt": "2026-02-11T15:30:00.000Z",
+  "updatedAt": "2026-02-11T15:30:00.000Z"
+}`}</code>
+          </pre>
+        </div>
+
+        {/* List Tickets */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 rounded font-mono text-sm font-semibold">
+              GET
+            </span>
+            <code className="text-lg font-mono text-slate-900 dark:text-slate-100">/tickets</code>
+          </div>
+          
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Retrieve all tickets</p>
+          
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Query Parameters</h4>
+          <div className="space-y-2 mb-4">
+            <div className="flex gap-2">
+              <code className="text-sm bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">status</code>
+              <span className="text-slate-600 dark:text-slate-400">Filter by status (new, in_progress, review, sent, closed)</span>
+            </div>
+            <div className="flex gap-2">
+              <code className="text-sm bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">priority</code>
+              <span className="text-slate-600 dark:text-slate-400">Filter by priority (low, normal, high, urgent)</span>
+            </div>
+          </div>
+
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Response</h4>
+          <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto">
+            <code>{`{
+  "tickets": [
+    {
+      "id": "cmlb49srj00003se5j3w",
+      "customerEmail": "customer@example.com",
+      "subject": "Need help with billing",
+      "status": "new",
+      "priority": "normal",
+      "createdAt": "2026-02-11T15:30:00.000Z"
+    }
+  ]
+}`}</code>
+          </pre>
+        </div>
+
+        {/* Get Ticket */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 rounded font-mono text-sm font-semibold">
+              GET
+            </span>
+            <code className="text-lg font-mono text-slate-900 dark:text-slate-100">/tickets/:id</code>
+          </div>
+          
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Retrieve a specific ticket by ID</p>
+          
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Response</h4>
+          <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto">
+            <code>{`{
+  "id": "cmlb49srj00003se5j3w",
+  "customerEmail": "customer@example.com",
+  "customerName": "John Doe",
+  "subject": "Need help with billing",
+  "status": "new",
+  "priority": "normal",
+  "originalMessage": "I have a question about my invoice...",
+  "aiResponse": "Thank you for reaching out...",
+  "aiConfidence": 0.92,
+  "contextData": {
+    "stripe": { "customerId": "cus_123" }
+  },
+  "createdAt": "2026-02-11T15:30:00.000Z",
+  "updatedAt": "2026-02-11T15:30:00.000Z"
+}`}</code>
+          </pre>
+        </div>
+
+        {/* Update Ticket */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="px-3 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 rounded font-mono text-sm font-semibold">
+              PATCH
+            </span>
+            <code className="text-lg font-mono text-slate-900 dark:text-slate-100">/tickets/:id</code>
+          </div>
+          
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Update a ticket</p>
+          
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Request Body</h4>
+          <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto">
+            <code>{`{
+  "status": "in_progress",
+  "priority": "high",
+  "finalResponse": "Custom response text..."
+}`}</code>
+          </pre>
+        </div>
+
+        {/* Send Response */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded font-mono text-sm font-semibold">
+              POST
+            </span>
+            <code className="text-lg font-mono text-slate-900 dark:text-slate-100">/tickets/:id/send</code>
+          </div>
+          
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Send a response to the customer</p>
+          
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Request Body</h4>
+          <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto">
+            <code>{`{
+  "response": "Thank you for contacting us..."
+}`}</code>
+          </pre>
+        </div>
+      </section>
+
+      {/* Error Codes */}
+      <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">Error Codes</h2>
+        <div className="space-y-3">
+          <div className="flex gap-3">
+            <code className="text-sm bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">400</code>
+            <span className="text-slate-600 dark:text-slate-400">Bad Request - Invalid parameters</span>
+          </div>
+          <div className="flex gap-3">
+            <code className="text-sm bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">401</code>
+            <span className="text-slate-600 dark:text-slate-400">Unauthorized - Invalid or missing API key</span>
+          </div>
+          <div className="flex gap-3">
+            <code className="text-sm bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">404</code>
+            <span className="text-slate-600 dark:text-slate-400">Not Found - Resource doesn't exist</span>
+          </div>
+          <div className="flex gap-3">
+            <code className="text-sm bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">500</code>
+            <span className="text-slate-600 dark:text-slate-400">Internal Server Error</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Rate Limiting */}
+      <section className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">Rate Limiting</h2>
+        <p className="text-slate-600 dark:text-slate-400">
+          API requests are limited to 100 requests per minute per API key. Rate limit information is included in response headers:
+        </p>
+        <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto mt-4">
+          <code>{`X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1707667200`}</code>
+        </pre>
+      </section>
+    </div>
+  );
+}

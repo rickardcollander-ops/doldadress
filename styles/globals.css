@@ -1,0 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand Colors */
+  --success-purple: #7C5CFF;
+  --ai-blue: #4DA3FF;
+  --growth-green: #2FE0A7;
+  --risk-red: #FF5A5A;
+  --warning-amber: #FFB020;
+  
+  /* Dark Theme (Primary Mode) */
+  --bg-dark: #0B0F1A;
+  --surface-dark: #12172A;
+  --elevated-dark: #1A2140;
+  --hover-dark: #1E2648;
+  
+  --text-primary: #E8EBF2;
+  --text-secondary: #A3AAC2;
+  --text-muted: #6F7692;
+  
+  --border-default: #2A3360;
+  --border-subtle: #1E2648;
+  
+  /* Light Theme */
+  --bg-light: #F6F8FC;
+  --surface-light: #FFFFFF;
+  --text-light-primary: #0E1324;
+  --text-light-secondary: #4A5270;
+  --border-light: #E4E8F2;
+  
+  /* Shadows */
+  --shadow-card: 0 10px 30px rgba(0,0,0,0.35);
+  --shadow-elevated: 0 20px 50px rgba(0,0,0,0.5);
+  --shadow-glow-purple: 0 0 20px rgba(124,92,255,0.4);
+  --shadow-glow-blue: 0 0 20px rgba(77,163,255,0.3);
+  --shadow-glow-green: 0 0 20px rgba(47,224,167,0.3);
+  --shadow-glow-red: 0 0 20px rgba(255,90,90,0.3);
+  
+  /* Motion */
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+  
+  /* Default to dark theme */
+  --background: var(--bg-dark);
+  --foreground: var(--text-primary);
+}
+
+.dark {
+  --background: var(--bg-dark);
+  --foreground: var(--text-primary);
+}
+
+.light {
+  --background: var(--bg-light);
+  --foreground: var(--text-light-primary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Safe area for mobile devices with notches */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Toast slide-up animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+/* AI Pulse Animation */
+@keyframes ai-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(124, 92, 255, 0.4);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 30px rgba(124, 92, 255, 0.6);
+  }
+}
+
+.ai-pulse {
+  animation: ai-pulse 2.5s ease-in-out infinite;
+}
+
+/* AI Halo Effect */
+.ai-halo {
+  border: 1px dashed var(--success-purple);
+  box-shadow: var(--shadow-glow-purple);
+  animation: ai-pulse 2.5s ease-in-out infinite;
+}
+
+/* Smooth Transitions */
+* {
+  transition-timing-function: var(--ease-smooth);
+}
+
+/* Success Path Gradient Line */
+.success-path-line {
+  background: linear-gradient(90deg, var(--success-purple) 0%, var(--ai-blue) 50%, var(--growth-green) 100%);
+  height: 4px;
+  opacity: 0.6;
+}
+
+/* Focus Frame */
+.focus-frame {
+  border: 2px solid transparent;
+  background-image: 
+    linear-gradient(var(--surface-dark), var(--surface-dark)),
+    linear-gradient(135deg, var(--success-purple), var(--ai-blue));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  backdrop-filter: blur(8px);
+}
+
+/* Loading Bar Animation */
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 1s ease-in-out infinite;
+}
+
+/* Page Transition Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: fade-in 0.2s ease-out;
+}
+
+.content-transition {
+  animation: slide-in-up 0.3s ease-out;
+}
+
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  input, select, textarea {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
