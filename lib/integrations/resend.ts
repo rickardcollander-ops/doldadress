@@ -26,10 +26,13 @@ export class ResendService {
 
   async getEmailHistory(email: string) {
     try {
-      const emails = await this.resend.emails.list();
-      const filtered = emails.data?.filter((e: any) => 
+      const response = await this.resend.emails.list();
+      if (!response.data) return [];
+      
+      const emailList = Array.isArray(response.data) ? response.data : (response.data as any).data || [];
+      const filtered = emailList.filter((e: any) => 
         e.to?.includes(email) || e.from?.includes(email)
-      ) || [];
+      );
       
       return filtered.map((e: any) => ({
         id: e.id,
