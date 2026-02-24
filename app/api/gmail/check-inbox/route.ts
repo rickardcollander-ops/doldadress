@@ -23,10 +23,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const creds = gmailIntegration.credentials as Record<string, string>;
     const gmailService = new GmailService({
-      clientId: gmailIntegration.credentials.clientId as string,
-      clientSecret: gmailIntegration.credentials.clientSecret as string,
-      refreshToken: gmailIntegration.credentials.refreshToken as string,
+      clientId: creds.clientId,
+      clientSecret: creds.clientSecret,
+      refreshToken: creds.refreshToken,
     });
 
     // Fetch unread emails
