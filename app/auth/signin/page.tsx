@@ -1,8 +1,13 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function SignIn() {
+function SignInContent() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-slate-700">
@@ -14,6 +19,18 @@ export default function SignIn() {
             Logga in för att hantera kundärenden
           </p>
         </div>
+
+        {error === 'AccessDenied' && (
+          <div className="mb-6 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300 text-center">
+            Åtkomst nekad. Bara @doldadress.se-konton kan logga in.
+          </div>
+        )}
+
+        {error === 'OAuthAccountNotLinked' && (
+          <div className="mb-6 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-300 text-center">
+            Det gick inte att logga in. Försök igen.
+          </div>
+        )}
 
         <button
           onClick={() => signIn('google', { callbackUrl: '/tickets' })}
@@ -45,5 +62,13 @@ export default function SignIn() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense>
+      <SignInContent />
+    </Suspense>
   );
 }

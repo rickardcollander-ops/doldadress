@@ -125,7 +125,7 @@ export async function POST(
         newTickets++;
 
         // Generate AI response in background
-        generateAIResponse(subject, body || 'No content', contextData)
+        generateAIResponse(subject, body || 'No content', contextData, tenant.id)
           .then(async ({ response, confidence }) => {
             await prisma.ticket.update({
               where: { id: ticket.id },

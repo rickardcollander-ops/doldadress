@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { 
   Menu, 
   X, 
@@ -12,7 +13,9 @@ import {
   ChevronRight,
   BarChart3,
   Mail,
-  Code
+  Code,
+  Shield,
+  LogOut
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -20,6 +23,7 @@ type NavItem = {
   href: string; 
   label: string; 
   icon: React.ElementType;
+  superadminOnly?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -29,11 +33,14 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/developer", label: "Developer", icon: Code },
   { href: "/settings/email-accounts", label: "Email Accounts", icon: Mail },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/admin", label: "Admin", icon: Shield, superadminOnly: true },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: session } = useSession();
+  const isSuperadmin = session?.user?.role === "superadmin";
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -71,7 +78,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <ul className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.superadminOnly || isSuperadmin).map((item) => {
             const Icon = item.icon;
             const active =
               item.href === "/"
@@ -101,9 +108,33 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* Branding */}
-      <div className="border-t border-white/10 p-4">
-        <div className="text-center text-xs text-slate-500">
+      {/* User & Sign Out */}
+      <div className="border-t border-white/10 p-4 space-y-3">
+        {session?.user && (
+          <div className="flex items-center gap-3">
+            {session.user.image ? (
+              <img src={session.user.image} alt="" className="w-8 h-8 rounded-full" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#7C5CFF] flex items-center justify-center">
+                <span className="text-white text-xs font-bold">
+                  {(session.user.name || session.user.email || '?')[0].toUpperCase()}
+                </span>
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-white truncate">{session.user.name || session.user.email}</p>
+              <p className="text-[10px] text-slate-400 truncate">{session.user.email}</p>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-[#1E2648] rounded-lg transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Logga ut
+        </button>
+        <div className="text-center text-[10px] text-slate-600">
           Powered by Successifier
         </div>
       </div>

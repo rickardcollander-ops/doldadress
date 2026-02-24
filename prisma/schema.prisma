@@ -99,6 +99,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  role          String    @default("agent")
   tenantId      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

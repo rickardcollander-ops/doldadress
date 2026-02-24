@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Mail, ChevronDown } from 'lucide-react';
+import { Mail, ChevronDown, Search, X, Loader2 } from 'lucide-react';
 import type { Ticket } from '@/lib/types';
 
 interface ReplyFromAccount {
@@ -60,6 +60,14 @@ interface TicketDetailProps {
   onSend: (ticketId: string, response: string, fromAccountId?: string) => void;
 }
 
+function sortInvoicesDesc(invoices: any[]): any[] {
+  return [...invoices].sort((a, b) => {
+    const numA = parseInt(a.number || a.invoiceNumber || '0', 10);
+    const numB = parseInt(b.number || b.invoiceNumber || '0', 10);
+    return numB - numA;
+  });
+}
+
 export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }: TicketDetailProps) {
   const [response, setResponse] = useState(ticket.finalResponse || ticket.aiResponse || '');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -69,6 +77,37 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [emailAccounts, setEmailAccounts] = useState<ReplyFromAccount[]>([]);
   const [selectedFromAccount, setSelectedFromAccount] = useState<string>('');
+  const [billectaModalOpen, setBillectaModalOpen] = useState(false);
+  const [billectaSearchQuery, setBillectaSearchQuery] = useState('');
+  const [billectaSearchType, setBillectaSearchType] = useState<'auto' | 'invoice' | 'orgno'>('auto');
+  const [billectaSearchResults, setBillectaSearchResults] = useState<any>(null);
+  const [billectaSearching, setBillectaSearching] = useState(false);
+
+  const handleBillectaSearch = async () => {
+    if (!billectaSearchQuery.trim()) return;
+    setBillectaSearching(true);
+    setBillectaSearchResults(null);
+    try {
+      const res = await fetch('/api/billecta/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: billectaSearchQuery.trim(),
+          searchType: billectaSearchType === 'auto' ? undefined : billectaSearchType,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBillectaSearchResults(data);
+      } else {
+        setBillectaSearchResults({ error: data.error || 'Sökning misslyckades' });
+      }
+    } catch {
+      setBillectaSearchResults({ error: 'Nätverksfel vid sökning' });
+    } finally {
+      setBillectaSearching(false);
+    }
+  };
 
   // Fetch connected email accounts for "reply from" selector
   useEffect(() => {
@@ -236,84 +275,6 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
                 </div>
               </div>
 
-              {customerHistory.billecta && (
-                <div className="bg-white dark:bg-slate-800 rounded-md p-3 border border-green-200 dark:border-green-800">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-green-800 dark:text-green-300">Billecta</p>
-                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300">
-                      {customerHistory.billecta.source === 'context' ? 'Live context' : 'Från historik'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                    <div>
-                      <p className="text-slate-500 dark:text-slate-400">Fakturor</p>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">{customerHistory.billecta.invoices}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500 dark:text-slate-400">Obetalda</p>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">
-                        {customerHistory.billecta.unpaidInvoices === null
-                          ? 'Okänt'
-                          : customerHistory.billecta.unpaidInvoices}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500 dark:text-slate-400">Relaterade ärenden</p>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">{customerHistory.billecta.relatedTickets}</p>
-                    </div>
-                  </div>
-
-                  {(customerHistory.billecta.creditorPublicId || customerHistory.billecta.debtorPublicId) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs mt-3 pt-3 border-t border-green-100 dark:border-green-900">
-                      <div>
-                        <p className="text-slate-500 dark:text-slate-400">Creditor ID</p>
-                        <p className="font-medium text-slate-900 dark:text-slate-100 break-all">
-                          {customerHistory.billecta.creditorPublicId || '-'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500 dark:text-slate-400">Debtor ID</p>
-                        <p className="font-medium text-slate-900 dark:text-slate-100 break-all">
-                          {customerHistory.billecta.debtorPublicId || '-'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {customerHistory.billecta.invoicesPreview && customerHistory.billecta.invoicesPreview.length > 0 ? (
-                    <div className="mt-3 pt-3 border-t border-green-100 dark:border-green-900">
-                      <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Fakturadetaljer</p>
-                      <div className="space-y-2">
-                        {customerHistory.billecta.invoicesPreview.map((invoice, idx) => (
-                          <div
-                            key={`${invoice.id || invoice.number || 'invoice'}-${idx}`}
-                            className="rounded-md border border-slate-200 dark:border-slate-700 p-2 text-xs"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="font-medium text-slate-900 dark:text-slate-100">
-                                #{invoice.number || invoice.id || 'Okänd faktura'}
-                              </p>
-                              <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                                {invoice.status || 'okänd status'}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-1 text-slate-600 dark:text-slate-300">
-                              <p>Belopp: {invoice.amount ?? '-'}</p>
-                              <p>Förfallo: {invoice.dueDate || '-'}</p>
-                              <p>Betald: {invoice.isPaid === undefined ? 'okänt' : invoice.isPaid ? 'ja' : 'nej'}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-                      Inga detaljerade fakturafält ännu. Klicka "Generate AI Response" för att försöka hämta live Billecta-context.
-                    </p>
-                  )}
-                </div>
-              )}
-
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">Liknande tidigare ärenden</p>
                 {customerHistory.similarIssues.length === 0 ? (
@@ -363,19 +324,39 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
                   </div>
                 </div>
               )}
-              {ticket.contextData.billecta && (
-                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">B</span>
+              {(ticket.contextData?.billecta || customerHistory?.billecta) && (() => {
+                const bc = ticket.contextData?.billecta;
+                const hb = customerHistory?.billecta;
+                const invoices = bc?.invoices || hb?.invoicesPreview || [];
+                const totalInvoices = hb?.invoices ?? invoices.length;
+                const unpaidCount = hb?.unpaidInvoices ?? invoices.filter((i: any) => !i.isPaid).length;
+                const debtorName = bc?.debtorName || null;
+
+                return (
+                  <div
+                    onClick={() => setBillectaModalOpen(true)}
+                    className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 rounded-lg p-4 border border-green-200 dark:border-green-800 cursor-pointer hover:shadow-md hover:border-green-400 dark:hover:border-green-600 transition-all"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">B</span>
+                      </div>
+                      <p className="text-sm font-semibold text-green-900 dark:text-green-100">Billecta</p>
+                      <Search className="w-3.5 h-3.5 text-green-600 dark:text-green-400 ml-auto" />
                     </div>
-                    <p className="text-sm font-semibold text-green-900 dark:text-green-100">Billecta</p>
+                    {debtorName && (
+                      <p className="text-xs font-medium text-green-800 dark:text-green-200 mb-1">{debtorName}</p>
+                    )}
+                    <div className="flex gap-4 text-xs text-green-800 dark:text-green-200">
+                      <span>📋 {totalInvoices} fakturor</span>
+                      {unpaidCount > 0 && (
+                        <span className="text-amber-700 dark:text-amber-400">⚠ {unpaidCount} obetalda</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-green-600 dark:text-green-400 mt-2">Klicka för fakturor & sök</p>
                   </div>
-                  <div className="space-y-1 text-xs text-green-800 dark:text-green-200">
-                    <p>📋 {ticket.contextData.billecta.invoices?.length || 0} invoices</p>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
               {ticket.contextData.resend && (
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
                   <div className="flex items-center gap-2 mb-2">
@@ -495,6 +476,249 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
           </button>
         </div>
       </div>
+
+      {/* Billecta Search Modal */}
+      {billectaModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setBillectaModalOpen(false)}>
+          <div
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-green-600 flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">B</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Sök i Billecta</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Sök på kundnummer, fakturanummer eller personnummer</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setBillectaModalOpen(false)}
+                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Form */}
+            <div className="p-5 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex gap-2">
+                <select
+                  value={billectaSearchType}
+                  onChange={(e) => setBillectaSearchType(e.target.value as any)}
+                  className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="invoice">Fakturanr</option>
+                  <option value="orgno">Person/Orgnr</option>
+                </select>
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={billectaSearchQuery}
+                    onChange={(e) => setBillectaSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleBillectaSearch()}
+                    placeholder="Ange kundnummer, fakturanummer, personnummer eller namn..."
+                    className="w-full px-4 py-2 pl-10 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    autoFocus
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                </div>
+                <button
+                  onClick={handleBillectaSearch}
+                  disabled={billectaSearching || !billectaSearchQuery.trim()}
+                  className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {billectaSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  Sök
+                </button>
+              </div>
+            </div>
+
+            {/* Results */}
+            <div className="flex-1 overflow-auto p-5">
+              {billectaSearching && (
+                <div className="flex items-center justify-center py-12 text-slate-500 dark:text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                  <span className="text-sm">Söker i Billecta...</span>
+                </div>
+              )}
+
+              {!billectaSearching && billectaSearchResults?.error && (
+                <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">
+                  {billectaSearchResults.error}
+                </div>
+              )}
+
+              {!billectaSearching && billectaSearchResults?.type === 'empty' && (
+                <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                  <p className="text-sm">Inga resultat hittades för &quot;{billectaSearchQuery}&quot;</p>
+                </div>
+              )}
+
+              {!billectaSearching && billectaSearchResults?.type === 'invoice' && (
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">Faktura</p>
+                  {sortInvoicesDesc(billectaSearchResults.results).map((inv: any, idx: number) => (
+                    <div key={idx} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">Faktura #{inv.invoiceNumber}</p>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          inv.isPaid
+                            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                            : 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
+                        }`}>
+                          {inv.stage}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs">Kund</p>
+                          <p className="text-slate-900 dark:text-slate-100">{inv.debtorName || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs">Belopp</p>
+                          <p className="text-slate-900 dark:text-slate-100 font-medium">
+                            {inv.currentAmount ?? inv.invoicedAmount ?? '-'} {inv.currency}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs">Fakturadatum</p>
+                          <p className="text-slate-900 dark:text-slate-100">{inv.invoiceDate ? new Date(inv.invoiceDate).toLocaleDateString('sv-SE') : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs">Förfallodatum</p>
+                          <p className="text-slate-900 dark:text-slate-100">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('sv-SE') : '-'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!billectaSearching && billectaSearchResults?.type === 'debtor' && (
+                <div className="space-y-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">
+                    Kunder ({billectaSearchResults.results.length})
+                  </p>
+                  {billectaSearchResults.results.map((debtor: any, idx: number) => (
+                    <div key={idx} className="rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-semibold text-slate-900 dark:text-slate-100">{debtor.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{debtor.orgNo || ''} {debtor.email ? `• ${debtor.email}` : ''}</p>
+                          {debtor.address && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{debtor.address}, {debtor.zipCode} {debtor.city}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {debtor.openInvoices.length > 0 ? (
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold mb-2">
+                            Öppna fakturor ({debtor.openInvoices.length})
+                          </p>
+                          <div className="space-y-2">
+                            {sortInvoicesDesc(debtor.openInvoices).map((inv: any, invIdx: number) => (
+                              <div key={invIdx} className="rounded-md border border-slate-100 dark:border-slate-600 p-2.5 text-sm">
+                                <div className="flex items-center justify-between">
+                                  <p className="font-medium text-slate-900 dark:text-slate-100">#{inv.invoiceNumber}</p>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                    inv.isPaid
+                                      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                                      : 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
+                                  }`}>
+                                    {inv.stage}
+                                  </span>
+                                </div>
+                                <div className="flex gap-4 mt-1 text-xs text-slate-600 dark:text-slate-300">
+                                  <span>Belopp: {inv.currentAmount ?? '-'} kr</span>
+                                  <span>Förfaller: {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('sv-SE') : '-'}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Inga öppna fakturor</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!billectaSearching && !billectaSearchResults && (() => {
+                const bc = ticket.contextData?.billecta;
+                const hb = customerHistory?.billecta;
+                const invoices = sortInvoicesDesc(bc?.invoices || hb?.invoicesPreview || []);
+                const debtorName = bc?.debtorName || null;
+                const debtorOrgNo = bc?.debtorOrgNo || null;
+
+                if (invoices.length === 0) {
+                  return (
+                    <div className="text-center py-12 text-slate-400 dark:text-slate-500">
+                      <Search className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">Inga fakturor kopplade till denna kund</p>
+                      <p className="text-xs mt-1">Sök på kundnummer, fakturanummer, personnummer/orgnr eller namn</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {(debtorName || debtorOrgNo) && (
+                      <div className="flex items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
+                        <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                          <span className="text-green-700 dark:text-green-300 text-sm font-bold">
+                            {(debtorName || '?')[0].toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          {debtorName && <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{debtorName}</p>}
+                          {debtorOrgNo && <p className="text-xs text-slate-500 dark:text-slate-400">{debtorOrgNo}</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">
+                      Fakturor ({invoices.length})
+                    </p>
+                    <div className="space-y-2">
+                      {invoices.map((inv: any, idx: number) => (
+                        <div key={`ctx-inv-${idx}`} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-medium text-sm text-slate-900 dark:text-slate-100">
+                              #{inv.number || inv.id || 'Okänd'}
+                            </p>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              inv.isPaid
+                                ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                                : 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
+                            }`}>
+                              {inv.status || (inv.isPaid ? 'Betald' : 'Obetald')}
+                            </span>
+                          </div>
+                          <div className="flex gap-4 text-xs text-slate-600 dark:text-slate-300">
+                            <span>Belopp: {inv.amount ?? '-'} kr</span>
+                            <span>Förfaller: {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('sv-SE') : '-'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700 text-center">
+                      <p className="text-xs text-slate-400 dark:text-slate-500">Använd sökfältet ovan för att hitta fler fakturor eller kunder</p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,20 +3,37 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db/client";
 
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role: string;
+    };
+  }
+}
+
 const authSecret =
   process.env.AUTH_SECRET ||
   process.env.NEXTAUTH_SECRET ||
   (process.env.NODE_ENV === "development" ? "local-dev-auth-secret-change-me" : undefined);
+
+const ALLOWED_DOMAINS = ['doldadress.se'];
+const SUPERADMIN_EMAILS = ['rc@successifier.com'];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: authSecret,
   trustHost: true,
   debug: process.env.NODE_ENV === 'development',
   adapter: PrismaAdapter(prisma),
+  session: { strategy: 'jwt' },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
@@ -55,9 +72,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+    async signIn({ user }) {
+      const email = user.email?.toLowerCase() || '';
+      const domain = email.split('@')[1] || '';
+      if (SUPERADMIN_EMAILS.includes(email)) return true;
+      if (ALLOWED_DOMAINS.includes(domain)) return true;
+      return '/auth/signin?error=AccessDenied';
+    },
+    async jwt({ token, user }) {
+      // On first sign-in, user object is available — persist id + role in token
+      if (user) {
+        token.id = user.id;
+        try {
+          const rows = await prisma.$queryRaw<Array<{ role: string }>>`SELECT role FROM "User" WHERE id = ${user.id} LIMIT 1`;
+          token.role = rows[0]?.role || 'agent';
+        } catch {
+          token.role = 'agent';
+        }
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.role = (token.role as string) || 'agent';
       }
       return session;
     },

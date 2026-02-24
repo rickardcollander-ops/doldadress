@@ -33,6 +33,10 @@ export interface TicketContext {
   };
   billecta?: {
     debtorId?: string;
+    debtorPublicId?: string;
+    debtorName?: string;
+    debtorOrgNo?: string;
+    creditorPublicId?: string;
     invoices?: any[];
   };
   retool?: any;
