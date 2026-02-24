@@ -4,137 +4,110 @@ const prisma = new PrismaClient();
 const BILLECTA_BASE_URL = 'https://api.billecta.com';
 const ZENDESK_IMPORT_MARKER = '[Zendesk Import Source:';
 
-function decodeBase64IfPossible(value) {
-  try {
-    const candidate = String(value || '').trim();
-    if (!candidate || candidate.length < 20) return null;
-    if (!/^[A-Za-z0-9+/=]+$/.test(candidate) || candidate.length % 4 !== 0) return null;
-
-    const decoded = Buffer.from(candidate, 'base64').toString('utf8').trim();
-    if (!decoded || decoded === candidate || decoded.length < 10) return null;
-    if (!/^[\x21-\x7E]+$/.test(decoded)) return null;
-    return decoded;
-  } catch {
-    return null;
-  }
+/**
+ * Per Billecta docs: SecureToken must be base64-encoded in the Authorization header.
+ * The stored key may be raw or already encoded — we try both variants.
+ */
+function getAuthHeaderVariants(secureToken) {
+  const raw = secureToken.trim();
+  const encoded = Buffer.from(raw, 'utf8').toString('base64');
+  const variants = new Set([encoded, raw]);
+  return [...variants].map((token) => ({
+    Authorization: `SecureToken ${token}`,
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  }));
 }
 
-function getApiKeyVariants(rawApiKey) {
-  const variants = [];
-  const seen = new Set();
+async function billectaRequest(endpoint, secureToken) {
+  const headerVariants = getAuthHeaderVariants(secureToken);
+  let lastStatus = 0;
+  let lastBody = '';
 
-  const add = (value) => {
-    const trimmed = String(value || '').trim();
-    if (!trimmed || seen.has(trimmed)) return;
-    seen.add(trimmed);
-    variants.push(trimmed);
-  };
+  for (const headers of headerVariants) {
+    const response = await fetch(`${BILLECTA_BASE_URL}${endpoint}`, { headers });
+    lastStatus = response.status;
 
-  add(rawApiKey);
-  const decodedOnce = decodeBase64IfPossible(rawApiKey);
-  add(decodedOnce);
-  const decodedTwice = decodedOnce ? decodeBase64IfPossible(decodedOnce) : null;
-  add(decodedTwice);
-
-  add(Buffer.from(String(rawApiKey || '').trim(), 'utf8').toString('base64'));
-  if (decodedOnce) add(Buffer.from(decodedOnce, 'utf8').toString('base64'));
-
-  return variants;
-}
-
-async function billectaRequest(endpoint, apiKey) {
-  const keyVariants = getApiKeyVariants(apiKey);
-  const authSchemes = ['Bearer', 'SecureToken'];
-  let lastStatusText = 'Unauthorized';
-  let lastStatusCode = 401;
-  const attempts = [];
-
-  for (let keyIndex = 0; keyIndex < keyVariants.length; keyIndex += 1) {
-    const variant = keyVariants[keyIndex];
-    for (const scheme of authSchemes) {
-      const response = await fetch(`${BILLECTA_BASE_URL}${endpoint}`, {
-        headers: {
-          Authorization: `${scheme} ${variant}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const responseText = await response.text().catch(() => '');
-      const bodySnippet = responseText.slice(0, 180);
-      lastStatusText = response.statusText || lastStatusText;
-      lastStatusCode = response.status || lastStatusCode;
-
-      attempts.push({
-        endpoint,
-        scheme,
-        keyIndex,
-        status: response.status,
-        statusText: response.statusText || '',
-        bodySnippet,
-      });
-
-      if (response.ok) {
-        return responseText ? JSON.parse(responseText) : {};
-      }
+    if (response.ok) {
+      return response.json();
     }
+
+    lastBody = (await response.text().catch(() => '')).slice(0, 300);
   }
 
-  throw new Error(`Billecta API error: ${lastStatusCode} ${lastStatusText} | attempts=${JSON.stringify(attempts)}`);
+  throw new Error(`Billecta API ${lastStatus}: ${lastBody}`);
 }
 
-async function billectaRequestFirstAvailable(endpoints, apiKey) {
-  const endpointErrors = [];
+/**
+ * Billecta has NO search-by-email endpoint.
+ * GET /v1/debtors/debtors/{creditorPublicId} returns all debtors.
+ * We filter client-side by Email or ContactEmail.
+ */
+async function getDebtorByEmail(email, credentials) {
+  const debtors = await billectaRequest(
+    `/v1/debtors/debtors/${credentials.creditorPublicId}`,
+    credentials.apiKey
+  );
 
-  for (const endpoint of endpoints) {
-    try {
-      return await billectaRequest(endpoint, apiKey);
-    } catch (error) {
-      endpointErrors.push({
-        endpoint,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
+  const normalizedEmail = email.toLowerCase().trim();
+  const list = Array.isArray(debtors) ? debtors : [];
 
-  throw new Error(`Billecta API request failed | endpointErrors=${JSON.stringify(endpointErrors)}`);
+  return (
+    list.find(
+      (d) =>
+        (d.Email || '').toLowerCase().trim() === normalizedEmail ||
+        (d.ContactEmail || '').toLowerCase().trim() === normalizedEmail
+    ) || null
+  );
 }
 
 async function getBillectaContext(email, credentials) {
-  const debtorResponse = await billectaRequestFirstAvailable(
-    [
-      `/v1/creditors/creditor/${credentials.creditorPublicId}/debtors?search=${encodeURIComponent(email)}`,
-      `/v1/creditors/${credentials.creditorPublicId}/debtors?search=${encodeURIComponent(email)}`,
-      `/api/v1/creditors/creditor/${credentials.creditorPublicId}/debtors?search=${encodeURIComponent(email)}`,
-      `/api/v1/creditors/${credentials.creditorPublicId}/debtors?search=${encodeURIComponent(email)}`,
-    ],
-    credentials.apiKey
-  );
-
-  const debtor = debtorResponse?.data?.[0];
+  const debtor = await getDebtorByEmail(email, credentials);
   if (!debtor?.DebtorPublicId) return null;
 
-  const invoicesResponse = await billectaRequestFirstAvailable(
-    [
-      `/v1/creditors/creditor/${credentials.creditorPublicId}/debtors/${debtor.DebtorPublicId}/invoices`,
-      `/v1/creditors/${credentials.creditorPublicId}/debtors/${debtor.DebtorPublicId}/invoices`,
-      `/api/v1/creditors/creditor/${credentials.creditorPublicId}/debtors/${debtor.DebtorPublicId}/invoices`,
-      `/api/v1/creditors/${credentials.creditorPublicId}/debtors/${debtor.DebtorPublicId}/invoices`,
-    ],
-    credentials.apiKey
-  );
+  // Open invoices: GET /v1/invoice/openbydebtor/{debtorPublicId}
+  let openInvoices = [];
+  try {
+    const open = await billectaRequest(
+      `/v1/invoice/openbydebtor/${debtor.DebtorPublicId}`,
+      credentials.apiKey
+    );
+    openInvoices = Array.isArray(open) ? open : [];
+  } catch {
+    openInvoices = [];
+  }
+
+  // Closed invoices (last year): GET /v1/invoice/closedbydebtor/{debtorPublicId}?from=...&to=...
+  let closedInvoices = [];
+  try {
+    const now = new Date();
+    const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const from = yearAgo.toISOString().split('T')[0];
+    const to = now.toISOString().split('T')[0];
+    const closed = await billectaRequest(
+      `/v1/invoice/closedbydebtor/${debtor.DebtorPublicId}?from=${from}&to=${to}`,
+      credentials.apiKey
+    );
+    closedInvoices = Array.isArray(closed) ? closed : [];
+  } catch {
+    closedInvoices = [];
+  }
+
+  const allInvoices = [...openInvoices, ...closedInvoices];
 
   return {
     creditorPublicId: credentials.creditorPublicId,
     debtorPublicId: debtor.DebtorPublicId,
-    invoices:
-      invoicesResponse?.data?.map((inv) => ({
-        id: inv.InvoicePublicId,
-        number: inv.InvoiceNumber,
-        status: inv.State,
-        amount: inv.TotalAmount,
-        dueDate: inv.DueDate,
-        isPaid: inv.IsPaid,
-      })) || [],
+    debtorName: debtor.Name || null,
+    debtorOrgNo: debtor.OrgNo || null,
+    invoices: allInvoices.map((inv) => ({
+      id: inv.ActionPublicId,
+      number: inv.InvoiceNumber,
+      status: inv.Stage,
+      amount: inv.CurrentAmount?.ValueForView ?? inv.InvoicedAmount?.ValueForView ?? null,
+      dueDate: inv.DueDate,
+      isPaid: inv.Stage === 'Completed',
+    })),
   };
 }
 

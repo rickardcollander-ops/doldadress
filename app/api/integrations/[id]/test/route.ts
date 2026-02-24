@@ -1,98 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/client';
 
-function decodeBase64IfPossible(value: string): string | null {
-  try {
-    const candidate = value.trim();
-    if (!candidate || candidate.length < 20) return null;
-
-    if (!/^[A-Za-z0-9+/=]+$/.test(candidate) || candidate.length % 4 !== 0) {
-      return null;
-    }
-
-    const decoded = Buffer.from(candidate, 'base64').toString('utf8').trim();
-    if (!decoded || decoded === candidate || decoded.length < 10) return null;
-    // Header-safe token only (printable ASCII, no whitespace/control chars)
-    if (!/^[\x21-\x7E]+$/.test(decoded)) return null;
-
-    return decoded;
-  } catch {
-    return null;
-  }
-}
-
-function getApiKeyVariants(apiKey: string): string[] {
-  const variants: string[] = [];
-  const seen = new Set<string>();
-
-  const add = (value: string | null | undefined) => {
-    const trimmed = String(value || '').trim();
-    if (!trimmed || seen.has(trimmed)) return;
-    seen.add(trimmed);
-    variants.push(trimmed);
-  };
-
-  add(apiKey);
-  const decodedOnce = decodeBase64IfPossible(apiKey);
-  add(decodedOnce);
-  const decodedTwice = decodedOnce ? decodeBase64IfPossible(decodedOnce) : null;
-  add(decodedTwice);
-
-  const encodedRaw = Buffer.from(String(apiKey || '').trim(), 'utf8').toString('base64').trim();
-  add(encodedRaw);
-  const encodedDecodedOnce = decodedOnce ? Buffer.from(decodedOnce, 'utf8').toString('base64').trim() : null;
-  add(encodedDecodedOnce);
-
-  return variants;
-}
-
+/**
+ * Per Billecta docs (https://docs.billecta.com/api):
+ * - Auth: SecureToken must be base64-encoded in the Authorization header
+ * - Endpoint to verify credentials: GET /v1/creditors/creditors (returns all creditors for user)
+ */
 async function billectaProbe(creditorPublicId: string, apiKey: string) {
-  // Verified with Billecta support/developer tooling: this endpoint returns 200 when token + creditor are correct
-  const endpoint = `https://api.billecta.com/v1/creditors/creditor/${creditorPublicId}`;
+  const baseUrl = 'https://api.billecta.com';
+  const endpoint = `${baseUrl}/v1/creditors/creditors`;
 
-  const requestWithAuth = async (scheme: 'Bearer' | 'SecureToken', key: string) => {
+  const raw = apiKey.trim();
+  const encoded = Buffer.from(raw, 'utf8').toString('base64');
+
+  // Try both: base64(raw) and raw-as-is (in case it's already encoded)
+  const tokenVariants = [...new Set([encoded, raw])];
+
+  let lastStatus = 401;
+  let lastBodySnippet = '';
+
+  for (const token of tokenVariants) {
     const res = await fetch(endpoint, {
       headers: {
-        Authorization: `${scheme} ${key}`,
+        'Authorization': `SecureToken ${token}`,
+        'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
     });
 
-    return res;
-  };
+    lastStatus = res.status;
 
-  const candidates = getApiKeyVariants(apiKey);
-  const schemes: Array<'Bearer' | 'SecureToken'> = ['Bearer', 'SecureToken'];
-  let lastStatus = 401;
-  let lastScheme: 'Bearer' | 'SecureToken' = 'Bearer';
-  let lastBodySnippet = '';
+    if (res.ok) {
+      const body = await res.json();
+      const creditors = Array.isArray(body) ? body : [];
+      const matched = creditors.find(
+        (c: any) => c.CreditorPublicId === creditorPublicId
+      );
 
-  for (const key of candidates) {
-    for (const scheme of schemes) {
-      const res = await requestWithAuth(scheme, key);
-      lastStatus = res.status;
-      lastScheme = scheme;
-      if (res.ok) {
-        const body = await res.json();
-        return {
-          ok: true,
-          upstreamStatus: res.status,
-          authScheme: scheme,
-          usedDecodedKey: key !== apiKey.trim(),
-          matchedCreditorPublicId: body?.CreditorPublicId || null,
-          message: `Billecta auth OK (${scheme})`,
-        };
-      }
-
-      const bodyText = await res.text().catch(() => '');
-      lastBodySnippet = bodyText.slice(0, 200);
+      return {
+        ok: true,
+        upstreamStatus: res.status,
+        authScheme: 'SecureToken',
+        usedEncodedKey: token === encoded,
+        matchedCreditorPublicId: matched?.CreditorPublicId || null,
+        creditorName: matched?.Name || null,
+        totalCreditors: creditors.length,
+        message: matched
+          ? `Billecta OK — creditor "${matched.Name}" found`
+          : `Billecta auth OK but creditorPublicId not found among ${creditors.length} creditors`,
+      };
     }
+
+    lastBodySnippet = (await res.text().catch(() => '')).slice(0, 200);
   }
 
   return {
     ok: false,
     upstreamStatus: lastStatus,
-    authScheme: lastScheme,
+    authScheme: 'SecureToken',
     ...(process.env.NODE_ENV !== 'production' && lastBodySnippet
       ? { upstreamBodySnippet: lastBodySnippet }
       : {}),
