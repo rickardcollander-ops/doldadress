@@ -38,7 +38,7 @@ export async function POST(
     const contextAggregator = new ContextAggregator();
     const context = await contextAggregator.gatherContext(
       ticket.customerEmail,
-      integrations
+      integrations as any
     );
 
     const contextFormatted = contextAggregator.formatContextForAI(context);
