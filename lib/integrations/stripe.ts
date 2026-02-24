@@ -5,7 +5,7 @@ export class StripeService {
 
   constructor(apiKey: string) {
     this.stripe = new Stripe(apiKey, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2026-01-28.clover',
     });
   }
 
@@ -38,7 +38,7 @@ export class StripeService {
         subscriptions: subscriptions.data.map(sub => ({
           id: sub.id,
           status: sub.status,
-          currentPeriodEnd: sub.current_period_end,
+          currentPeriodEnd: (sub as any).current_period_end,
           items: sub.items.data.map(item => ({
             price: item.price.unit_amount,
             product: item.price.product,
@@ -49,7 +49,7 @@ export class StripeService {
           status: inv.status,
           amount: inv.amount_due,
           dueDate: inv.due_date,
-          paid: inv.paid,
+          paid: inv.status === 'paid',
         })),
         charges: charges.data.map(charge => ({
           id: charge.id,
