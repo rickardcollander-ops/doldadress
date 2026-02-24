@@ -2,6 +2,7 @@ import { StripeService } from '../integrations/stripe';
 import { BillectaService } from '../integrations/billecta';
 import { RetoolService } from '../integrations/retool';
 import { ResendService } from '../integrations/resend';
+import { GmailService } from '../integrations/gmail';
 import type { Integration, TicketContext } from '../types';
 
 export class ContextAggregator {
