@@ -66,7 +66,7 @@ export interface KnowledgeBase {
 export interface Integration {
   id: string;
   tenantId: string;
-  type: 'stripe' | 'billecta' | 'retool' | 'resend';
+  type: 'stripe' | 'billecta' | 'retool' | 'resend' | 'gmail';
   name: string;
   credentials: Record<string, string>;
   isActive: boolean;
