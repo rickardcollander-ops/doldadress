@@ -55,7 +55,7 @@ export interface KnowledgeBase {
   tenantId: string;
   title: string;
   content: string;
-  category?: string;
+  category: string | null;
   tags: string[];
   isActive: boolean;
   createdAt: Date;
