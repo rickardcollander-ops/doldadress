@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { KnowledgeBase, TicketContext } from '../types/tenant';
+import type { KnowledgeBase, TicketContext } from '../types';
 
 export class AIService {
   private openai: OpenAI;
