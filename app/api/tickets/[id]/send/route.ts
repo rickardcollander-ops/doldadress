@@ -118,6 +118,50 @@ export async function POST(
       },
     });
 
+    // Learning system: Save sent response as knowledge base article
+    // This helps AI learn from actual responses sent to customers
+    try {
+      const existingKB = await prisma.knowledgeBase.findFirst({
+        where: {
+          tenantId: ticket.tenantId,
+          title: {
+            contains: ticket.subject.substring(0, 50),
+          },
+          category: 'Lärande från skickade svar',
+        },
+      });
+
+      if (!existingKB) {
+        await prisma.knowledgeBase.create({
+          data: {
+            tenantId: ticket.tenantId,
+            title: `${ticket.subject.substring(0, 150)}`,
+            content: `# ${ticket.subject}
+
+## Kundfråga
+${ticket.originalMessage}
+
+## Skickat Svar (Verifierat)
+${response}
+
+## Metadata
+- Skickat: ${new Date().toISOString()}
+- Kund: ${ticket.customerEmail}
+- Status: ${ticket.status}
+${(ticket.contextData as any)?.billecta ? `- Billecta-kontext: Ja (${(ticket.contextData as any).billecta.invoices?.length || 0} fakturor)` : ''}
+
+Detta svar har skickats till en riktig kund och är verifierat korrekt.`,
+            category: 'Lärande från skickade svar',
+            tags: ['verified-response', 'customer-sent', 'learning', ...ticket.subject.toLowerCase().split(' ').slice(0, 3)],
+            isActive: true,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create learning KB article:', error);
+      // Don't fail the send if KB creation fails
+    }
+
     return NextResponse.json({ ...updatedTicket, sentVia });
   } catch (error) {
     console.error('Error sending response:', error);
