@@ -216,12 +216,12 @@ export default function TicketsPage() {
     }
   };
 
-  const handleSendResponse = async (ticketId: string, response: string, fromAccountId?: string) => {
+  const handleSendResponse = async (ticketId: string, response: string, fromAccountId?: string, recipientEmail?: string) => {
     try {
       const res = await fetch(`/api/tickets/${ticketId}/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ response, fromAccountId }),
+        body: JSON.stringify({ response, fromAccountId, recipientEmail }),
       });
 
       if (res.ok) {

@@ -10,7 +10,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { response, fromAccountId } = body;
+    const { response, fromAccountId, recipientEmail } = body;
 
     if (!response) {
       return NextResponse.json(
@@ -59,7 +59,7 @@ export async function POST(
 
       const rawMessage = [
         `From: ${emailAccount.email}`,
-        `To: ${ticket.customerEmail}`,
+        `To: ${recipientEmail || ticket.customerEmail}`,
         `Subject: Re: ${ticket.subject}`,
         `Content-Type: text/plain; charset="UTF-8"`,
         '',
@@ -101,7 +101,7 @@ export async function POST(
       );
 
       await resendService.sendEmail(
-        ticket.customerEmail,
+        recipientEmail || ticket.customerEmail,
         `Re: ${ticket.subject}`,
         response
       );

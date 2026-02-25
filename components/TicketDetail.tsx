@@ -232,7 +232,7 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
       await onUpdate(ticket.id, { customerEmail: recipientEmail });
     }
     
-    await onSend(ticket.id, response, selectedFromAccount || undefined);
+    await onSend(ticket.id, response, selectedFromAccount || undefined, recipientEmail);
     setIsSending(false);
   };
 
