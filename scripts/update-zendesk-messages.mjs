@@ -34,6 +34,7 @@ async function updateZendeskMessages() {
       try {
         const zendeskId = ticket.id.toString();
         const description = ticket.description || '';
+        const comments = ticket.comments || [];
 
         // Find existing ticket by Zendesk ID
         const existingTicket = await prisma.ticket.findFirst({
@@ -50,15 +51,34 @@ async function updateZendeskMessages() {
           continue;
         }
 
-        // Update with actual message content
+        // Build full conversation history
+        let fullMessage = `[Zendesk ID: ${zendeskId}]\n[Imported from Zendesk on ${new Date().toISOString()}]\n\n`;
+        fullMessage += `=== ORIGINAL MESSAGE ===\n${description}\n\n`;
+
+        // Add all comments/replies
+        if (comments.length > 0) {
+          fullMessage += `=== CONVERSATION HISTORY (${comments.length} messages) ===\n\n`;
+          
+          comments.forEach((comment, index) => {
+            const commentDate = new Date(comment.created_at).toLocaleString('sv-SE');
+            const authorName = comment.author_id ? `User ${comment.author_id}` : 'Unknown';
+            const body = comment.plain_body || comment.body || '';
+            const isPublic = comment.public ? 'Public' : 'Internal';
+            
+            fullMessage += `--- Message ${index + 1} (${commentDate}) [${isPublic}] ---\n`;
+            fullMessage += `${body}\n\n`;
+          });
+        }
+
+        // Update with full conversation
         await prisma.ticket.update({
           where: { id: existingTicket.id },
           data: {
-            originalMessage: `[Zendesk ID: ${zendeskId}]\n[Imported from Zendesk on ${new Date().toISOString()}]\n\n${description}`,
+            originalMessage: fullMessage,
           },
         });
 
-        console.log(`✅ Updated #${zendeskId}: ${ticket.subject}`);
+        console.log(`✅ Updated #${zendeskId}: ${ticket.subject} (${comments.length} messages)`);
         updated++;
 
       } catch (error) {
