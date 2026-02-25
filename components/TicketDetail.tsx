@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Mail, ChevronDown, Search, X, Loader2 } from 'lucide-react';
+import { Mail, ChevronDown, Search, X, Loader2, Trash2, AlertOctagon } from 'lucide-react';
 import type { Ticket } from '@/lib/types';
 
 interface ReplyFromAccount {
@@ -58,6 +58,8 @@ interface TicketDetailProps {
   onUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
   onGenerateAI: (ticketId: string) => Promise<string | null>;
   onSend: (ticketId: string, response: string, fromAccountId?: string) => void;
+  onDelete?: (ticketId: string) => void;
+  onSpam?: (ticketId: string) => void;
 }
 
 function sortInvoicesDesc(invoices: any[]): any[] {
@@ -68,7 +70,7 @@ function sortInvoicesDesc(invoices: any[]): any[] {
   });
 }
 
-export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }: TicketDetailProps) {
+export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, onDelete, onSpam }: TicketDetailProps) {
   const [response, setResponse] = useState(ticket.finalResponse || ticket.aiResponse || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -192,6 +194,18 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
     onUpdate(ticket.id, { status: status as any });
   };
 
+  const handleDelete = () => {
+    if (confirm('Är du säker på att du vill ta bort detta ärende? Detta kan inte ångras.')) {
+      onDelete?.(ticket.id);
+    }
+  };
+
+  const handleSpam = () => {
+    if (confirm('Markera detta ärende som spam?')) {
+      onSpam?.(ticket.id);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col">
       <div className="p-6 border-b border-slate-200 dark:border-slate-700">
@@ -221,7 +235,7 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
         )}
         
         <div className="flex items-start justify-between mb-4">
-          <div>
+          <div className="flex-1">
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">{ticket.subject}</h2>
             <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
               <span>{ticket.customerEmail}</span>
@@ -229,17 +243,37 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
               <span>{new Date(ticket.createdAt).toLocaleString()}</span>
             </div>
           </div>
-          <select
-            value={ticket.status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            className="px-3 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-          >
-            <option value="new">New</option>
-            <option value="in_progress">In Progress</option>
-            <option value="review">Review</option>
-            <option value="sent">Sent</option>
-            <option value="closed">Closed</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={ticket.status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              className="px-3 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+            >
+              <option value="new">New</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="sent">Sent</option>
+              <option value="closed">Closed</option>
+            </select>
+            {onSpam && (
+              <button
+                onClick={handleSpam}
+                className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors"
+                title="Markera som spam"
+              >
+                <AlertOctagon className="w-4 h-4" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={handleDelete}
+                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                title="Ta bort ärende"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

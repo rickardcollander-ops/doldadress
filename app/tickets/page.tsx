@@ -233,6 +233,42 @@ export default function TicketsPage() {
     }
   };
 
+  const handleDeleteTicket = async (ticketId: string) => {
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/delete`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setTickets(tickets.filter(t => t.id !== ticketId));
+        setArchivedTickets(archivedTickets.filter(t => t.id !== ticketId));
+        if (selectedTicket?.id === ticketId) {
+          setSelectedTicket(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting ticket:', error);
+    }
+  };
+
+  const handleSpamTicket = async (ticketId: string) => {
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/spam`, {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        const updatedTicket = await res.json();
+        setTickets(tickets.map(t => t.id === ticketId ? updatedTicket : t));
+        if (selectedTicket?.id === ticketId) {
+          setSelectedTicket(updatedTicket);
+        }
+      }
+    } catch (error) {
+      console.error('Error marking ticket as spam:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -373,6 +409,8 @@ export default function TicketsPage() {
                     onUpdate={handleTicketUpdate}
                     onGenerateAI={handleGenerateAIResponse}
                     onSend={handleSendResponse}
+                    onDelete={handleDeleteTicket}
+                    onSpam={handleSpamTicket}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
@@ -399,6 +437,8 @@ export default function TicketsPage() {
                 onUpdate={handleTicketUpdate}
                 onGenerateAI={handleGenerateAIResponse}
                 onSend={handleSendResponse}
+                onDelete={handleDeleteTicket}
+                onSpam={handleSpamTicket}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
