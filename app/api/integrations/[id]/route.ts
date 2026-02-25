@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/client';
+import { encryptJSON, decryptJSON } from '@/lib/crypto';
 
 export async function PATCH(
   request: NextRequest,
@@ -9,12 +10,26 @@ export async function PATCH(
     const body = await request.json();
     const { id } = await params;
 
+    // If credentials are being updated, encrypt them
+    const updateData = { ...body };
+    if (updateData.credentials) {
+      updateData.credentials = encryptJSON(updateData.credentials) as any;
+    }
+
     const integration = await prisma.integration.update({
       where: { id },
-      data: body,
+      data: updateData,
     });
 
-    return NextResponse.json(integration);
+    // Decrypt credentials for response
+    const decryptedIntegration = {
+      ...integration,
+      credentials: integration.credentials 
+        ? decryptJSON(integration.credentials as any)
+        : integration.credentials,
+    };
+
+    return NextResponse.json(decryptedIntegration);
   } catch (error) {
     console.error('Error updating integration:', error);
     return NextResponse.json(

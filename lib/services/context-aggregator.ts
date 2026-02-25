@@ -4,8 +4,27 @@ import { RetoolService } from '../integrations/retool';
 import { ResendService } from '../integrations/resend';
 import { GmailService } from '../integrations/gmail';
 import type { Integration, TicketContext } from '../types';
+import { decryptJSON, isEncrypted } from '../crypto';
 
 export class ContextAggregator {
+  private decryptCredentials(integration: Integration): any {
+    try {
+      const credentialsStr = typeof integration.credentials === 'string'
+        ? integration.credentials
+        : JSON.stringify(integration.credentials);
+      
+      // Check if encrypted, if so decrypt
+      if (isEncrypted(credentialsStr)) {
+        return decryptJSON(credentialsStr);
+      }
+      
+      return integration.credentials;
+    } catch (error) {
+      console.error(`Failed to decrypt credentials for ${integration.type}:`, error);
+      return integration.credentials; // Fallback to raw credentials
+    }
+  }
+
   async gatherContext(
     customerEmail: string,
     integrations: Integration[]
@@ -17,17 +36,19 @@ export class ContextAggregator {
       .filter(i => i.isActive)
       .map(async (integration) => {
         try {
+          const credentials = this.decryptCredentials(integration);
+          
           switch (integration.type) {
             case 'stripe':
-              const stripeService = new StripeService(integration.credentials.apiKey);
+              const stripeService = new StripeService(credentials.apiKey);
               const stripeData = await stripeService.getCustomerContext(normalizedEmail);
               if (stripeData) context.stripe = stripeData;
               break;
 
             case 'billecta':
               const billectaService = new BillectaService(
-                integration.credentials.apiKey,
-                integration.credentials.creditorPublicId
+                credentials.apiKey,
+                credentials.creditorPublicId
               );
               const billectaData = await billectaService.getCustomerContext(normalizedEmail);
               if (billectaData) context.billecta = billectaData;
@@ -35,8 +56,8 @@ export class ContextAggregator {
 
             case 'retool':
               const retoolService = new RetoolService(
-                integration.credentials.apiKey,
-                integration.credentials.workspaceUrl
+                credentials.apiKey,
+                credentials.workspaceUrl
               );
               const retoolData = await retoolService.getCustomerContext(normalizedEmail);
               if (retoolData) context.retool = retoolData;
@@ -44,8 +65,8 @@ export class ContextAggregator {
 
             case 'resend':
               const resendService = new ResendService(
-                integration.credentials.apiKey,
-                integration.credentials.fromEmail
+                credentials.apiKey,
+                credentials.fromEmail
               );
               const resendData = await resendService.getCustomerContext(normalizedEmail);
               if (resendData) context.resend = resendData;
@@ -53,9 +74,9 @@ export class ContextAggregator {
 
             case 'gmail':
               const gmailService = new GmailService({
-                clientId: integration.credentials.clientId,
-                clientSecret: integration.credentials.clientSecret,
-                refreshToken: integration.credentials.refreshToken,
+                clientId: credentials.clientId,
+                clientSecret: credentials.clientSecret,
+                refreshToken: credentials.refreshToken,
               });
               const gmailData = await gmailService.getCustomerContext(normalizedEmail);
               if (gmailData) context.gmail = gmailData;
