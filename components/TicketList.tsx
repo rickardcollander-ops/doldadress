@@ -19,6 +19,8 @@ export default function TicketList({ tickets, selectedTicket, onSelectTicket }: 
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'closed':
         return 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200';
+      case 'archived':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
       default:
         return 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200';
     }

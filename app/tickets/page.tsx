@@ -14,9 +14,12 @@ interface EmailSyncStatus {
 
 export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [archivedTickets, setArchivedTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingArchived, setLoadingArchived] = useState(false);
   const [activeStatus, setActiveStatus] = useState<string>('all');
+  const [archivedSearch, setArchivedSearch] = useState('');
   const [emailSyncStatus, setEmailSyncStatus] = useState<EmailSyncStatus>({
     lastSyncAt: null,
     totalNewTickets: 0,
@@ -238,9 +241,37 @@ export default function TicketsPage() {
     );
   }
 
+  const fetchArchivedTickets = async () => {
+    if (archivedTickets.length > 0) return;
+    setLoadingArchived(true);
+    try {
+      const response = await fetch('/api/tickets?status=archived');
+      if (response.ok) {
+        const data = await response.json();
+        setArchivedTickets(data.tickets);
+      }
+    } catch (error) {
+      console.error('Error fetching archived tickets:', error);
+    } finally {
+      setLoadingArchived(false);
+    }
+  };
+
   const filteredTickets = activeStatus === 'all' 
     ? tickets 
+    : activeStatus === 'archived'
+    ? []
     : tickets.filter(t => t.status === activeStatus);
+
+  const filteredArchivedTickets = archivedTickets.filter(t => {
+    if (!archivedSearch) return true;
+    const search = archivedSearch.toLowerCase();
+    return (
+      t.subject.toLowerCase().includes(search) ||
+      t.customerEmail.toLowerCase().includes(search) ||
+      (t.customerName || '').toLowerCase().includes(search)
+    );
+  });
 
   const statusCounts = {
     all: tickets.length,
@@ -258,6 +289,7 @@ export default function TicketsPage() {
     { id: 'review', label: 'Granskning', count: statusCounts.review },
     { id: 'sent', label: 'Skickade', count: statusCounts.sent },
     { id: 'closed', label: 'Stängda', count: statusCounts.closed },
+    { id: 'archived', label: 'Arkiverade', count: archivedTickets.length || '...' },
   ];
 
   return (
@@ -268,7 +300,10 @@ export default function TicketsPage() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveStatus(tab.id)}
+              onClick={() => {
+                setActiveStatus(tab.id);
+                if (tab.id === 'archived') fetchArchivedTickets();
+              }}
               className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-all ${
                 activeStatus === tab.id
                   ? 'text-[#7C5CFF] border-b-2 border-[#7C5CFF] bg-[#7C5CFF]/5'
@@ -307,29 +342,72 @@ export default function TicketsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
-        <div className="lg:col-span-1 overflow-auto">
-          <TicketList
-            tickets={filteredTickets}
-            selectedTicket={selectedTicket}
-            onSelectTicket={setSelectedTicket}
-          />
-        </div>
-        <div className="lg:col-span-2 overflow-auto">
-          {selectedTicket ? (
-            <TicketDetail
-              ticket={selectedTicket}
-              onUpdate={handleTicketUpdate}
-              onGenerateAI={handleGenerateAIResponse}
-              onSend={handleSendResponse}
+      {activeStatus === 'archived' ? (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Sök i arkiverade ärenden (ämne, e-post, namn)..."
+              value={archivedSearch}
+              onChange={(e) => setArchivedSearch(e.target.value)}
+              className="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#7C5CFF]/50"
             />
+          </div>
+          {loadingArchived ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="text-slate-500 dark:text-slate-400">Laddar arkiverade ärenden...</div>
+            </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
-              Select a ticket to view details
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+              <div className="lg:col-span-1 overflow-auto">
+                <TicketList
+                  tickets={filteredArchivedTickets}
+                  selectedTicket={selectedTicket}
+                  onSelectTicket={setSelectedTicket}
+                />
+              </div>
+              <div className="lg:col-span-2 overflow-auto">
+                {selectedTicket ? (
+                  <TicketDetail
+                    ticket={selectedTicket}
+                    onUpdate={handleTicketUpdate}
+                    onGenerateAI={handleGenerateAIResponse}
+                    onSend={handleSendResponse}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
+                    Välj ett arkiverat ärende för att visa detaljer
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+          <div className="lg:col-span-1 overflow-auto">
+            <TicketList
+              tickets={filteredTickets}
+              selectedTicket={selectedTicket}
+              onSelectTicket={setSelectedTicket}
+            />
+          </div>
+          <div className="lg:col-span-2 overflow-auto">
+            {selectedTicket ? (
+              <TicketDetail
+                ticket={selectedTicket}
+                onUpdate={handleTicketUpdate}
+                onGenerateAI={handleGenerateAIResponse}
+                onSend={handleSendResponse}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
+                Select a ticket to view details
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

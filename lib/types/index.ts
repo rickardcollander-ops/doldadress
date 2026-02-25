@@ -12,7 +12,7 @@ export interface Ticket {
   customerEmail: string;
   customerName?: string;
   subject: string;
-  status: 'new' | 'in_progress' | 'waiting_ai' | 'review' | 'sent' | 'closed';
+  status: 'new' | 'in_progress' | 'waiting_ai' | 'review' | 'sent' | 'closed' | 'archived';
   priority: 'low' | 'normal' | 'high' | 'urgent';
   originalMessage: string;
   aiResponse?: string;

@@ -6,6 +6,9 @@ const ZENDESK_IMPORT_MARKER = '[Zendesk Import Source:';
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+
     // Find tenant by subdomain
     const tenant = await prisma.tenant.findUnique({
       where: { subdomain: 'doldadress' },
@@ -15,9 +18,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ tickets: [] });
     }
 
+    // If requesting archived tickets
+    if (status === 'archived') {
+      const tickets = await prisma.ticket.findMany({
+        where: {
+          tenantId: tenant.id,
+          status: 'archived',
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+      });
+      return NextResponse.json({ tickets });
+    }
+
+    // Default: exclude archived and Zendesk imports
     const tickets = await prisma.ticket.findMany({
       where: {
         tenantId: tenant.id,
+        status: { not: 'archived' },
         NOT: {
           originalMessage: {
             contains: ZENDESK_IMPORT_MARKER,
