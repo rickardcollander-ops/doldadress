@@ -19,7 +19,7 @@ ENCRYPTION_KEY=a74fa64ce3d2d95be9979282fa540690ddd4c3388cddf8c93f64390f18fda2bc
 
 ### 3. NextAuth
 ```
-NEXTAUTH_URL=https://doldadress.vercel.app
+NEXTAUTH_URL=https://doldadress.successifier.com
 NEXTAUTH_SECRET=[generera med: openssl rand -base64 32]
 AUTH_SECRET=[samma som NEXTAUTH_SECRET]
 ```
@@ -33,16 +33,16 @@ OPENAI_API_KEY=sk-...
 ```
 GOOGLE_CLIENT_ID=461289086029-7vbhlhcm56he55u1mm9gikalepfdlugt.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=[från Google Cloud Console]
-GOOGLE_OAUTH_BASE_URL=https://doldadress.vercel.app
+GOOGLE_OAUTH_BASE_URL=https://doldadress.successifier.com
 ```
 
 **VIKTIGT - Google Cloud Console Konfiguration:**
 
 Gå till [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials) och lägg till följande **Authorized redirect URIs** för OAuth 2.0 Client:
 
-**Production (Vercel):**
-- `https://doldadress.vercel.app/api/auth/callback/google` (NextAuth sign-in)
-- `https://doldadress.vercel.app/api/auth/gmail/callback` (Gmail account linking)
+**Production:**
+- `https://doldadress.successifier.com/api/auth/callback/google` (NextAuth sign-in)
+- `https://doldadress.successifier.com/api/auth/gmail/callback` (Gmail account linking)
 
 **Development (Lokal):**
 - `http://localhost:3001/api/auth/callback/google`
