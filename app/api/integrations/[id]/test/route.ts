@@ -1,6 +1,159 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/client';
 
+async function stripeProbe(apiKey: string) {
+  try {
+    const res = await fetch('https://api.stripe.com/v1/balance', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+
+    if (res.ok) {
+      return {
+        ok: true,
+        message: 'Stripe connection successful',
+      };
+    }
+
+    return {
+      ok: false,
+      message: `Stripe auth failed: HTTP ${res.status}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: 'Stripe connection error',
+    };
+  }
+}
+
+async function resendProbe(apiKey: string, fromEmail: string) {
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: 'test@resend.dev',
+        subject: 'Test',
+        html: '<p>Test</p>',
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok || res.status === 422) {
+      return {
+        ok: true,
+        message: 'Resend API key valid',
+      };
+    }
+
+    return {
+      ok: false,
+      message: `Resend auth failed: ${data.message || res.status}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: 'Resend connection error',
+    };
+  }
+}
+
+async function retoolProbe(apiKey: string, workspaceUrl: string) {
+  try {
+    const url = workspaceUrl.replace(/\/$/, '');
+    const res = await fetch(`${url}/api/resources`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+
+    if (res.ok) {
+      return {
+        ok: true,
+        message: 'Retool connection successful',
+      };
+    }
+
+    return {
+      ok: false,
+      message: `Retool auth failed: HTTP ${res.status}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: 'Retool connection error',
+    };
+  }
+}
+
+async function gmailProbe(clientId: string, clientSecret: string, refreshToken: string) {
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    if (res.ok) {
+      return {
+        ok: true,
+        message: 'Gmail OAuth credentials valid',
+      };
+    }
+
+    return {
+      ok: false,
+      message: `Gmail auth failed: HTTP ${res.status}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: 'Gmail connection error',
+    };
+  }
+}
+
+async function postmanProbe(apiKey: string, workspaceId: string) {
+  try {
+    const res = await fetch(`https://api.getpostman.com/workspaces/${workspaceId}`, {
+      headers: {
+        'X-Api-Key': apiKey,
+      },
+    });
+
+    if (res.ok) {
+      return {
+        ok: true,
+        message: 'Postman connection successful',
+      };
+    }
+
+    return {
+      ok: false,
+      message: `Postman auth failed: HTTP ${res.status}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: 'Postman connection error',
+    };
+  }
+}
+
 /**
  * Per Billecta docs (https://docs.billecta.com/api):
  * - Auth: SecureToken must be base64-encoded in the Authorization header
@@ -85,25 +238,73 @@ export async function POST(
       return NextResponse.json({ ok: false, message: 'Integration not found' }, { status: 404 });
     }
 
-    if (integration.type !== 'billecta') {
-      return NextResponse.json({ ok: false, message: 'Test endpoint currently supports Billecta only' }, { status: 400 });
-    }
-
     const credentials = integration.credentials as Record<string, string>;
-    const apiKey = String(credentials.apiKey || '').trim();
-    const creditorPublicId = String(credentials.creditorPublicId || '').trim();
+    let result;
 
-    if (!apiKey || !creditorPublicId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: 'Missing credentials: apiKey and creditorPublicId are required',
-        },
-        { status: 400 }
-      );
+    switch (integration.type) {
+      case 'stripe': {
+        const apiKey = String(credentials.apiKey || '').trim();
+        if (!apiKey) {
+          return NextResponse.json({ ok: false, message: 'Missing Stripe API key' }, { status: 400 });
+        }
+        result = await stripeProbe(apiKey);
+        break;
+      }
+
+      case 'billecta': {
+        const apiKey = String(credentials.apiKey || '').trim();
+        const creditorPublicId = String(credentials.creditorPublicId || '').trim();
+        if (!apiKey || !creditorPublicId) {
+          return NextResponse.json({ ok: false, message: 'Missing Billecta credentials' }, { status: 400 });
+        }
+        result = await billectaProbe(creditorPublicId, apiKey);
+        break;
+      }
+
+      case 'resend': {
+        const apiKey = String(credentials.apiKey || '').trim();
+        const fromEmail = String(credentials.fromEmail || '').trim();
+        if (!apiKey || !fromEmail) {
+          return NextResponse.json({ ok: false, message: 'Missing Resend credentials' }, { status: 400 });
+        }
+        result = await resendProbe(apiKey, fromEmail);
+        break;
+      }
+
+      case 'retool': {
+        const apiKey = String(credentials.apiKey || '').trim();
+        const workspaceUrl = String(credentials.workspaceUrl || '').trim();
+        if (!apiKey || !workspaceUrl) {
+          return NextResponse.json({ ok: false, message: 'Missing Retool credentials' }, { status: 400 });
+        }
+        result = await retoolProbe(apiKey, workspaceUrl);
+        break;
+      }
+
+      case 'gmail': {
+        const clientId = String(credentials.clientId || '').trim();
+        const clientSecret = String(credentials.clientSecret || '').trim();
+        const refreshToken = String(credentials.refreshToken || '').trim();
+        if (!clientId || !clientSecret || !refreshToken) {
+          return NextResponse.json({ ok: false, message: 'Missing Gmail OAuth credentials' }, { status: 400 });
+        }
+        result = await gmailProbe(clientId, clientSecret, refreshToken);
+        break;
+      }
+
+      case 'postman': {
+        const apiKey = String(credentials.apiKey || '').trim();
+        const workspaceId = String(credentials.workspaceId || '').trim();
+        if (!apiKey || !workspaceId) {
+          return NextResponse.json({ ok: false, message: 'Missing Postman credentials' }, { status: 400 });
+        }
+        result = await postmanProbe(apiKey, workspaceId);
+        break;
+      }
+
+      default:
+        return NextResponse.json({ ok: false, message: `Testing not supported for ${integration.type}` }, { status: 400 });
     }
-
-    const result = await billectaProbe(creditorPublicId, apiKey);
 
     return NextResponse.json({
       integrationId: integration.id,

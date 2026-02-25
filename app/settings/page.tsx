@@ -252,6 +252,7 @@ export default function SettingsPage() {
           ]}
           onSave={handleSave}
           onToggle={handleToggle}
+          onTestConnection={handleTestConnection}
         />
 
         <IntegrationCard
@@ -279,6 +280,7 @@ export default function SettingsPage() {
           ]}
           onSave={handleSave}
           onToggle={handleToggle}
+          onTestConnection={handleTestConnection}
         />
 
         <IntegrationCard
@@ -292,6 +294,7 @@ export default function SettingsPage() {
           ]}
           onSave={handleSave}
           onToggle={handleToggle}
+          onTestConnection={handleTestConnection}
         />
 
         <IntegrationCard
@@ -306,6 +309,7 @@ export default function SettingsPage() {
           ]}
           onSave={handleSave}
           onToggle={handleToggle}
+          onTestConnection={handleTestConnection}
         />
 
         <IntegrationCard
@@ -319,6 +323,7 @@ export default function SettingsPage() {
           ]}
           onSave={handleSave}
           onToggle={handleToggle}
+          onTestConnection={handleTestConnection}
         />
       </div>
     </div>
