@@ -61,14 +61,29 @@ async function syncSingleAccount(account: {
       const customerEmail = emailMatch ? emailMatch[1] : from;
       const customerName = from.replace(/<.+>/, '').trim();
 
+      // Recursive function to extract all text content from nested parts
+      function extractTextFromParts(parts: any[]): string {
+        let text = '';
+        for (const part of parts) {
+          if (part.mimeType === 'text/plain' && part.body?.data) {
+            text += Buffer.from(part.body.data, 'base64').toString() + '\n\n';
+          } else if (part.mimeType === 'text/html' && part.body?.data && !text) {
+            // Fallback to HTML if no plain text found
+            text += Buffer.from(part.body.data, 'base64').toString() + '\n\n';
+          }
+          // Recursively check nested parts
+          if (part.parts) {
+            text += extractTextFromParts(part.parts);
+          }
+        }
+        return text;
+      }
+
       let body = '';
       if (msg.data.payload?.body?.data) {
         body = Buffer.from(msg.data.payload.body.data, 'base64').toString();
       } else if (msg.data.payload?.parts) {
-        const textPart = msg.data.payload.parts.find((p) => p.mimeType === 'text/plain');
-        if (textPart?.body?.data) {
-          body = Buffer.from(textPart.body.data, 'base64').toString();
-        }
+        body = extractTextFromParts(msg.data.payload.parts);
       }
 
       // Check if ticket already exists for this Gmail message ID
