@@ -39,8 +39,8 @@ async function syncSingleAccount(account: {
 
   const response = await gmail.users.messages.list({
     userId: 'me',
-    q: 'is:unread in:inbox',
-    maxResults: 10,
+    q: 'in:inbox',
+    maxResults: 100,
   });
 
   const messages = response.data.messages || [];
@@ -100,13 +100,14 @@ async function syncSingleAccount(account: {
         })
         .catch(console.error);
 
-      await gmail.users.messages.modify({
-        userId: 'me',
-        id: message.id!,
-        requestBody: {
-          removeLabelIds: ['UNREAD'],
-        },
-      });
+      // Temporarily disabled: don't mark as read during full sync
+      // await gmail.users.messages.modify({
+      //   userId: 'me',
+      //   id: message.id!,
+      //   requestBody: {
+      //     removeLabelIds: ['UNREAD'],
+      //   },
+      // });
     } catch (error) {
       console.error(`Error processing message ${message.id} for ${account.email}:`, error);
     }
