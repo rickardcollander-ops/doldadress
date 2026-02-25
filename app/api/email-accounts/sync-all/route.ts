@@ -39,7 +39,7 @@ async function syncSingleAccount(account: {
 
   const response = await gmail.users.messages.list({
     userId: 'me',
-    q: 'is:unread',
+    q: 'is:unread in:inbox',
     maxResults: 10,
   });
 
