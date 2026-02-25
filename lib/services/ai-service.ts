@@ -16,24 +16,29 @@ export class AIService {
   ): Promise<string> {
     const relevantKnowledge = this.findRelevantKnowledge(customerMessage, knowledgeBase);
 
-    const systemPrompt = `You are a helpful customer support agent. Your goal is to provide accurate, professional, and empathetic responses to customer inquiries.
+    const systemPrompt = `Du är en professionell kundsupportagent för Doldadress. Ditt mål är att ge korrekta, professionella och empatiska svar på svenska.
 
-Available Knowledge Base:
-${relevantKnowledge.map(kb => `
-Title: ${kb.title}
-Category: ${kb.category || 'General'}
-Content: ${kb.content}
-`).join('\n---\n')}
+VIKTIGT - KUNSKAPSBAS (KOLLA ALLTID FÖRST):
+${relevantKnowledge.length > 0 ? relevantKnowledge.map(kb => `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${kb.title}
+Kategori: ${kb.category || 'Allmänt'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${kb.content}
+`).join('\n') : 'Ingen relevant kunskapsbas hittades för denna fråga.'}
 
+KUNDKONTEXT:
 ${contextFormatted}
 
-Guidelines:
-- Be professional but friendly
-- Use the knowledge base to provide accurate information
-- Reference specific customer data when relevant (subscriptions, invoices, etc.)
-- If you don't have enough information, ask clarifying questions
-- Keep responses concise but complete
-- Always maintain customer privacy and security`;
+INSTRUKTIONER:
+1. **BÖRJA ALLTID** med att söka svar i kunskapsbasen ovan
+2. Om kunskapsbasen har information - använd den som grund för ditt svar
+3. Komplettera med kundspecifik data (fakturor, abonnemang etc) när relevant
+4. Var professionell men vänlig på svenska
+5. Om du inte har tillräcklig information - fråga förtydligande frågor
+6. Håll svar koncisa men kompletta
+7. Referera aldrig till känslig kundinformation i klartext
+8. Om kunskapsbasen innehåller länkar eller systemreferenser - inkludera dessa i svaret`;
 
     try {
       const completion = await this.openai.chat.completions.create({

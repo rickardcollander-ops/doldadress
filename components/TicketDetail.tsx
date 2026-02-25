@@ -196,7 +196,7 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
     <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col">
       <div className="p-6 border-b border-slate-200 dark:border-slate-700">
         {/* AI Status Banner */}
-        {ticket.aiResponse && ticket.aiConfidence && (
+        {ticket.aiResponse && (
           <div className="mb-4 p-3 bg-gradient-to-r from-[#7C5CFF]/10 to-[#9F7BFF]/10 border border-[#7C5CFF]/30 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -208,12 +208,14 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend }:
                   <p className="text-xs text-slate-600 dark:text-slate-400">Klart att granska och skicka</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-600 dark:text-slate-400">Säkerhet:</span>
-                <span className="px-3 py-1 bg-gradient-to-r from-[#7C5CFF] to-[#9F7BFF] text-white rounded-full text-sm font-bold">
-                  {Math.round(ticket.aiConfidence * 100)}%
-                </span>
-              </div>
+              {ticket.aiConfidence && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-600 dark:text-slate-400">Säkerhet:</span>
+                  <span className="px-3 py-1 bg-gradient-to-r from-[#7C5CFF] to-[#9F7BFF] text-white rounded-full text-sm font-bold">
+                    {Math.round(ticket.aiConfidence * 100)}%
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
