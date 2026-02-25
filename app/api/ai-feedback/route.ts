@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         finalResponse,
         wasEdited,
         rating,
-        contextUsed: ticket.contextData,
+        contextUsed: ticket.contextData as any,
         knowledgeUsed: knowledgeUsed || [],
       },
     });
