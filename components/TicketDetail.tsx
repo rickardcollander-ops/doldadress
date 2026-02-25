@@ -185,9 +185,47 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
     setIsGenerating(false);
   };
 
+  const handleAIFeedback = async (rating: 'positive' | 'negative') => {
+    if (!aiSuggestion) return;
+
+    try {
+      await fetch('/api/ai-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId: ticket.id,
+          aiResponse: aiSuggestion,
+          finalResponse: response,
+          rating,
+          knowledgeUsed: [], // TODO: Track which KB articles were used
+        }),
+      });
+
+      // Show brief feedback confirmation
+      console.log(`AI feedback recorded: ${rating}`);
+    } catch (error) {
+      console.error('Error saving AI feedback:', error);
+    }
+  };
+
   const handleSend = async () => {
     if (!response) return;
     setIsSending(true);
+    
+    // Save feedback if AI was used and response was edited
+    if (aiSuggestion && response !== aiSuggestion) {
+      await fetch('/api/ai-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId: ticket.id,
+          aiResponse: aiSuggestion,
+          finalResponse: response,
+          rating: null, // No explicit rating, just tracking the edit
+          knowledgeUsed: [],
+        }),
+      });
+    }
     
     // Update recipient email if changed
     if (recipientEmail !== ticket.customerEmail) {
@@ -440,11 +478,29 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
         {/* AI Suggestion Section */}
         {aiSuggestion && (
           <div className="bg-gradient-to-r from-[#7C5CFF]/10 to-[#9F7BFF]/10 border border-[#7C5CFF]/30 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#7C5CFF] to-[#9F7BFF] flex items-center justify-center">
-                <span className="text-white text-xs">✨</span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#7C5CFF] to-[#9F7BFF] flex items-center justify-center">
+                  <span className="text-white text-xs">✨</span>
+                </div>
+                <p className="text-sm font-semibold text-[#7C5CFF] dark:text-[#9F7BFF]">AI Suggested Response</p>
               </div>
-              <p className="text-sm font-semibold text-[#7C5CFF] dark:text-[#9F7BFF]">AI Suggested Response</p>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handleAIFeedback('positive')}
+                  className="p-1.5 rounded-md hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                  title="Bra svar"
+                >
+                  <span className="text-lg">👍</span>
+                </button>
+                <button
+                  onClick={() => handleAIFeedback('negative')}
+                  className="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                  title="Dåligt svar"
+                >
+                  <span className="text-lg">👎</span>
+                </button>
+              </div>
             </div>
             <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{aiSuggestion}</p>
             <div className="flex gap-2 mt-3">

@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL_UNPOOLED")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Tenant {
@@ -76,6 +75,27 @@ model KnowledgeBase {
 
   @@index([tenantId, isActive])
   @@index([tenantId, category])
+}
+
+model AIResponseFeedback {
+  id                String   @id @default(cuid())
+  tenantId          String
+  ticketId          String
+  customerEmail     String
+  subject           String
+  originalMessage   String   @db.Text
+  aiResponse        String   @db.Text
+  finalResponse     String?  @db.Text
+  wasEdited         Boolean  @default(false)
+  rating            String?  // 'positive', 'negative', null
+  editedBy          String?  // User who edited
+  contextUsed       Json?    // What context was available (billecta, stripe, etc)
+  knowledgeUsed     String[] // Which KB articles were used
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, rating])
+  @@index([customerEmail])
 }
 
 model Integration {

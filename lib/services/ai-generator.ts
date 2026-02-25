@@ -69,6 +69,44 @@ async function findRelevantKnowledge(tenantId: string, message: string): Promise
   }
 }
 
+async function findLearningExamples(tenantId: string, message: string): Promise<string> {
+  try {
+    const messageLower = message.toLowerCase();
+    
+    // Get recent positive feedback for similar queries
+    const feedback = await prisma.aIResponseFeedback.findMany({
+      where: {
+        tenantId,
+        rating: 'positive',
+        OR: [
+          { subject: { contains: messageLower.substring(0, 50), mode: 'insensitive' } },
+          { originalMessage: { contains: messageLower.substring(0, 50), mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+      select: {
+        originalMessage: true,
+        finalResponse: true,
+      },
+    });
+
+    if (feedback.length === 0) return '';
+
+    let formatted = '\n\n=== EXEMPEL PÅ BRA SVAR (Lär från dessa) ===\n';
+    feedback.forEach((fb, index) => {
+      formatted += `\nExempel ${index + 1}:\n`;
+      formatted += `Kund frågade: ${fb.originalMessage.substring(0, 200)}...\n`;
+      formatted += `Bra svar: ${fb.finalResponse?.substring(0, 300) || 'N/A'}...\n`;
+    });
+
+    return formatted;
+  } catch (error) {
+    console.error('Error fetching learning examples:', error);
+    return '';
+  }
+}
+
 function formatContextForPrompt(contextData: any): string {
   if (!contextData) return '';
 
@@ -121,6 +159,10 @@ export async function generateAIResponse(
       ? await findRelevantKnowledge(tenantId, `${subject} ${originalMessage}`)
       : '';
 
+    const learningPrompt = tenantId
+      ? await findLearningExamples(tenantId, `${subject} ${originalMessage}`)
+      : '';
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
@@ -157,7 +199,7 @@ ABSOLUT FÖRBUD: Ge ALDRIG information om uppsägning som INTE finns i kunskapsb
         },
         {
           role: 'user',
-          content: `Ämne: ${subject}\n\nMeddelande: ${originalMessage}${contextPrompt}${knowledgePrompt}`,
+          content: `Ämne: ${subject}\n\nMeddelande: ${originalMessage}${contextPrompt}${knowledgePrompt}${learningPrompt}`,
         },
       ],
       temperature: 0.7,
