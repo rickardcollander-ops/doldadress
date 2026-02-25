@@ -293,11 +293,13 @@ export default function TicketsPage() {
     }
   };
 
-  const filteredTickets = activeStatus === 'all' 
-    ? tickets 
-    : activeStatus === 'archived'
-    ? []
-    : tickets.filter(t => t.status === activeStatus);
+  const billectaTickets = tickets.filter(t => t.customerEmail.toLowerCase() === 'no-reply@billecta.com');
+  
+  const filteredTickets = activeStatus === 'all'
+    ? tickets.filter(t => t.customerEmail.toLowerCase() !== 'no-reply@billecta.com')
+    : activeStatus === 'billecta'
+    ? billectaTickets
+    : tickets.filter(t => t.status === activeStatus && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com');
 
   const filteredArchivedTickets = archivedTickets.filter(t => {
     if (!archivedSearch) return true;
@@ -310,16 +312,18 @@ export default function TicketsPage() {
   });
 
   const statusCounts = {
-    all: tickets.length,
-    new: tickets.filter(t => t.status === 'new').length,
-    in_progress: tickets.filter(t => t.status === 'in_progress').length,
-    review: tickets.filter(t => t.status === 'review').length,
-    sent: tickets.filter(t => t.status === 'sent').length,
-    closed: tickets.filter(t => t.status === 'closed').length,
+    all: tickets.filter(t => t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
+    billecta: billectaTickets.length,
+    new: tickets.filter(t => t.status === 'new' && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
+    in_progress: tickets.filter(t => t.status === 'in_progress' && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
+    review: tickets.filter(t => t.status === 'review' && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
+    sent: tickets.filter(t => t.status === 'sent' && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
+    closed: tickets.filter(t => t.status === 'closed' && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
   };
 
   const tabs = [
     { id: 'all', label: 'Alla', count: statusCounts.all },
+    { id: 'billecta', label: 'Billecta', count: statusCounts.billecta },
     { id: 'new', label: 'Nya', count: statusCounts.new },
     { id: 'in_progress', label: 'Pågående', count: statusCounts.in_progress },
     { id: 'review', label: 'Granskning', count: statusCounts.review },
