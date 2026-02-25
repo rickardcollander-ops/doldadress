@@ -33,7 +33,22 @@ OPENAI_API_KEY=sk-...
 ```
 GOOGLE_CLIENT_ID=461289086029-7vbhlhcm56he55u1mm9gikalepfdlugt.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=[från Google Cloud Console]
+GOOGLE_OAUTH_BASE_URL=https://doldadress.vercel.app
 ```
+
+**VIKTIGT - Google Cloud Console Konfiguration:**
+
+Gå till [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials) och lägg till följande **Authorized redirect URIs** för OAuth 2.0 Client:
+
+**Production (Vercel):**
+- `https://doldadress.vercel.app/api/auth/callback/google` (NextAuth sign-in)
+- `https://doldadress.vercel.app/api/auth/gmail/callback` (Gmail account linking)
+
+**Development (Lokal):**
+- `http://localhost:3001/api/auth/callback/google`
+- `http://localhost:3001/api/auth/gmail/callback`
+
+Utan dessa redirect URIs kommer Gmail OAuth att misslyckas med "Safari kan inte ansluta till servern" eller liknande fel.
 
 ## Deployment Checklist
 
