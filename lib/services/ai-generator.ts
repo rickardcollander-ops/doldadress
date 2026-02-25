@@ -16,28 +16,47 @@ async function findRelevantKnowledge(tenantId: string, message: string): Promise
     const messageLower = message.toLowerCase();
     const words = messageLower.split(/\s+/).filter((w) => w.length > 3);
 
+    // Enhanced keyword matching for common topics
+    const cancellationKeywords = ['säger upp', 'uppsägning', 'avsluta', 'säga upp', 'säger upp', 'avslutar'];
+    const isCancellationQuery = cancellationKeywords.some(kw => messageLower.includes(kw));
+
     const relevant = knowledgeBase
-      .filter((kb) => {
+      .map((kb) => {
         const titleLower = kb.title.toLowerCase();
-        const contentLower = kb.content.toLowerCase().substring(0, 300);
+        const contentLower = kb.content.toLowerCase();
 
-        const titleMatch = words.some((w) => titleLower.includes(w)) ||
-          messageLower.includes(titleLower);
+        let score = 0;
 
-        const contentMatch = words.some((w) => contentLower.includes(w));
+        // Title matching (highest priority)
+        if (messageLower.includes(titleLower)) score += 10;
+        if (words.some((w) => titleLower.includes(w))) score += 5;
 
-        const tagMatch = kb.tags.some((tag) =>
+        // Content matching
+        if (words.some((w) => contentLower.includes(w))) score += 2;
+
+        // Tag matching
+        if (kb.tags.some((tag) =>
           messageLower.includes(tag.toLowerCase()) ||
           words.some((w) => tag.toLowerCase().includes(w))
-        );
+        )) score += 3;
 
-        return titleMatch || contentMatch || tagMatch;
+        // Boost cancellation-related articles if query is about cancellation
+        if (isCancellationQuery && (
+          titleLower.includes('uppsägning') ||
+          titleLower.includes('abonnemang') ||
+          contentLower.includes('säger upp')
+        )) score += 15;
+
+        return { kb, score };
       })
-      .slice(0, 5);
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map(({ kb }) => kb);
 
     if (relevant.length === 0) return '';
 
-    let formatted = '\n\n=== Kunskapsbas (använd detta för att ge korrekta svar) ===\n';
+    let formatted = '\n\n=== KUNSKAPSBAS (VIKTIGT: Använd denna information för att ge korrekta svar) ===\n';
     relevant.forEach((kb) => {
       formatted += `\n--- ${kb.title} ${kb.category ? `(${kb.category})` : ''} ---\n`;
       formatted += `${kb.content}\n`;
@@ -108,17 +127,21 @@ export async function generateAIResponse(
         {
           role: 'system',
           content: `Du är en professionell kundtjänstmedarbetare för Doldadress. 
-          
-Ditt jobb är att:
-1. Analysera kundens ärende
-2. Ge ett hjälpsamt, professionellt och empatiskt svar
-3. Använd kunskapsbasen nedan för att ge korrekta svar på vanliga frågor
-4. Om det finns fakturahistorik från Billecta, använd den för att ge ett mer precist svar (t.ex. referera till specifika fakturanummer, belopp, förfallodatum eller betalningsstatus)
-5. Om kunden har obetalda fakturor, nämn det vänligt och erbjud hjälp
-6. Avsluta med en uppmaning att kontakta oss om kunden har fler frågor
 
-Uppsägningstid: 1 månad
-Support: via telefon och e-post`,
+VIKTIGA REGLER:
+1. **ANVÄND ALLTID KUNSKAPSBASEN FÖRST** - Om det finns en kunskapsbasartikel som matchar kundens fråga, använd informationen därifrån. Detta är HÖGSTA PRIORITET.
+2. Analysera kundens ärende noggrant - förstå vad de verkligen frågar om
+3. Ge ett hjälpsamt, professionellt och empatiskt svar baserat på kunskapsbasen
+4. Om kunden frågar om uppsägning/avsluta/säga upp - använd informationen från kunskapsbasen om "Uppsägning av Abonnemang"
+5. Om det finns fakturahistorik från Billecta, använd den för att komplettera svaret (t.ex. referera till specifika fakturanummer, belopp, förfallodatum)
+6. Om kunden har obetalda fakturor OCH frågar om betalning, nämn det vänligt
+7. Avsluta alltid med att erbjuda ytterligare hjälp
+
+VIKTIGT: Läs kunskapsbasen noggrant och följ instruktionerna där. Gissa INTE om du har korrekt information i kunskapsbasen.
+
+Allmän info:
+- Uppsägningstid: 1 månad
+- Support: via telefon och e-post`,
         },
         {
           role: 'user',
