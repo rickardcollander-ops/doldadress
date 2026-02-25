@@ -20,6 +20,9 @@ export default function TicketsPage() {
   const [loadingArchived, setLoadingArchived] = useState(false);
   const [activeStatus, setActiveStatus] = useState<string>('all');
   const [archivedSearch, setArchivedSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'status'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [emailSyncStatus, setEmailSyncStatus] = useState<EmailSyncStatus>({
     lastSyncAt: null,
     totalNewTickets: 0,
@@ -297,13 +300,41 @@ export default function TicketsPage() {
   const billectaKivraTickets = billectaTickets.filter(t => t.subject.toLowerCase().includes('kivrameddelandet för faktura'));
   const billectaOtherTickets = billectaTickets.filter(t => !t.subject.toLowerCase().includes('kivrameddelandet för faktura'));
   
-  const filteredTickets = activeStatus === 'all'
+  // Filter by status
+  let statusFilteredTickets = activeStatus === 'all'
     ? tickets.filter(t => t.customerEmail.toLowerCase() !== 'no-reply@billecta.com')
     : activeStatus === 'billecta'
     ? billectaOtherTickets
     : activeStatus === 'billecta-kivra'
     ? billectaKivraTickets
     : tickets.filter(t => t.status === activeStatus && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com');
+
+  // Apply search filter
+  const searchFilteredTickets = searchQuery
+    ? statusFilteredTickets.filter(t => 
+        t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.customerName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.originalMessage.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : statusFilteredTickets;
+
+  // Apply sorting
+  const filteredTickets = [...searchFilteredTickets].sort((a, b) => {
+    let comparison = 0;
+    
+    if (sortBy === 'date') {
+      comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    } else if (sortBy === 'priority') {
+      const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+      comparison = (priorityOrder[a.priority] || 999) - (priorityOrder[b.priority] || 999);
+    } else if (sortBy === 'status') {
+      const statusOrder: Record<string, number> = { new: 0, in_progress: 1, waiting_ai: 1, review: 2, sent: 3, closed: 4, archived: 5 };
+      comparison = (statusOrder[a.status] || 999) - (statusOrder[b.status] || 999);
+    }
+    
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
 
   const filteredArchivedTickets = archivedTickets.filter(t => {
     if (!archivedSearch) return true;
@@ -340,6 +371,33 @@ export default function TicketsPage() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Search and Sort Controls */}
+      <div className="mb-3 flex items-center gap-3">
+        <input
+          type="text"
+          placeholder="Sök ärenden (ämne, email, namn, meddelande)..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#7C5CFF]"
+        />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as 'date' | 'priority' | 'status')}
+          className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFF]"
+        >
+          <option value="date">Sortera: Datum</option>
+          <option value="priority">Sortera: Prioritet</option>
+          <option value="status">Sortera: Status</option>
+        </select>
+        <button
+          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+          className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          title={sortOrder === 'asc' ? 'Stigande' : 'Fallande'}
+        >
+          {sortOrder === 'asc' ? '↑' : '↓'}
+        </button>
+      </div>
+
       {/* Tab Navigation & Email Sync Status */}
       <div className="mb-3 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between gap-4 mb-2">
