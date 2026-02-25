@@ -208,24 +208,23 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm h-full flex flex-col">
-      <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         {/* AI Status Banner */}
         {ticket.aiResponse && (
-          <div className="mb-4 p-3 bg-gradient-to-r from-[#7C5CFF]/10 to-[#9F7BFF]/10 border border-[#7C5CFF]/30 rounded-lg">
+          <div className="mb-3 p-2.5 bg-gradient-to-r from-[#7C5CFF]/10 to-[#9F7BFF]/10 border border-[#7C5CFF]/30 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#7C5CFF] to-[#9F7BFF] flex items-center justify-center">
-                  <span className="text-white text-sm">✨</span>
+                <div className="w-7 h-7 rounded-full bg-gradient-to-r from-[#7C5CFF] to-[#9F7BFF] flex items-center justify-center">
+                  <span className="text-white text-xs">✨</span>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#7C5CFF] dark:text-[#9F7BFF]">AI-svar genererat</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">Klart att granska och skicka</p>
+                  <p className="text-xs font-semibold text-[#7C5CFF] dark:text-[#9F7BFF]">AI-svar genererat</p>
                 </div>
               </div>
               {ticket.aiConfidence && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-600 dark:text-slate-400">Säkerhet:</span>
-                  <span className="px-3 py-1 bg-gradient-to-r from-[#7C5CFF] to-[#9F7BFF] text-white rounded-full text-sm font-bold">
+                  <span className="px-2.5 py-0.5 bg-gradient-to-r from-[#7C5CFF] to-[#9F7BFF] text-white rounded-full text-xs font-bold">
                     {Math.round(ticket.aiConfidence * 100)}%
                   </span>
                 </div>
@@ -234,10 +233,10 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
           </div>
         )}
         
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">{ticket.subject}</h2>
-            <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1.5">{ticket.subject}</h2>
+            <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
               <span>{ticket.customerEmail}</span>
               <span>•</span>
               <span>{new Date(ticket.createdAt).toLocaleString()}</span>
@@ -277,7 +276,7 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-6 space-y-6">
+      <div className="flex-1 overflow-auto p-4 space-y-4">
         <div>
           <h3 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Original Message</h3>
           <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 text-sm whitespace-pre-wrap text-slate-900 dark:text-slate-100">

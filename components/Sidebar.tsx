@@ -84,7 +84,7 @@ export default function Sidebar() {
           {!collapsed && <ThemeToggle />}
           <button
             onClick={toggleCollapsed}
-            className="hidden lg:block p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            className="hidden md:block p-1.5 rounded-lg hover:bg-white/10 transition-colors"
             title={collapsed ? 'Expandera meny' : 'Minimera meny'}
           >
             <Menu className="h-5 w-5 text-slate-400" />
