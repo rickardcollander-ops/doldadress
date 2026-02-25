@@ -57,7 +57,7 @@ interface TicketDetailProps {
   ticket: Ticket;
   onUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
   onGenerateAI: (ticketId: string) => Promise<string | null>;
-  onSend: (ticketId: string, response: string, fromAccountId?: string) => void;
+  onSend: (ticketId: string, response: string, fromAccountId?: string, recipientEmail?: string) => void;
   onDelete?: (ticketId: string) => void;
   onSpam?: (ticketId: string) => void;
 }
