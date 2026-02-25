@@ -20,7 +20,7 @@ const authSecret =
   process.env.NEXTAUTH_SECRET ||
   (process.env.NODE_ENV === "development" ? "local-dev-auth-secret-change-me" : undefined);
 
-const ALLOWED_DOMAINS = ['doldadress.se'];
+const ALLOWED_DOMAINS = ['doldadress.se', 'becomeanon.com'];
 const SUPERADMIN_EMAILS = ['rc@successifier.com'];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
