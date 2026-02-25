@@ -13,6 +13,11 @@ export async function GET(request: NextRequest) {
     const callbackOrigin = process.env.GOOGLE_OAUTH_BASE_URL?.replace(/\/$/, '') || request.nextUrl.origin;
     const callbackUrl = `${callbackOrigin}/api/auth/gmail/callback`;
 
+    console.log('[Gmail OAuth DEBUG] GOOGLE_OAUTH_BASE_URL:', process.env.GOOGLE_OAUTH_BASE_URL);
+    console.log('[Gmail OAuth DEBUG] request.nextUrl.origin:', request.nextUrl.origin);
+    console.log('[Gmail OAuth DEBUG] callbackOrigin:', callbackOrigin);
+    console.log('[Gmail OAuth DEBUG] callbackUrl:', callbackUrl);
+
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
@@ -29,9 +34,7 @@ export async function GET(request: NextRequest) {
       prompt: 'consent',
     });
 
-    console.log('[Gmail OAuth] callbackUrl:', callbackUrl);
-    console.log('[Gmail OAuth] authUrl redirect_uri:', new URL(authUrl).searchParams.get('redirect_uri'));
-    console.log('[Gmail OAuth] full authUrl:', authUrl);
+    console.log('[Gmail OAuth] Generated authUrl redirect_uri:', new URL(authUrl).searchParams.get('redirect_uri'));
 
     return NextResponse.redirect(authUrl);
   } catch (error) {
