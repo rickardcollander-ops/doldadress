@@ -327,14 +327,14 @@ export default function TicketsPage() {
   };
 
   const tabs = [
-    { id: 'all', label: 'Alla', count: statusCounts.all },
-    { id: 'billecta', label: 'Billecta', count: statusCounts.billecta },
-    { id: 'billecta-kivra', label: 'Billecta Kivra', count: statusCounts.billectaKivra },
     { id: 'new', label: 'Nya', count: statusCounts.new },
     { id: 'in_progress', label: 'Pågående', count: statusCounts.in_progress },
     { id: 'review', label: 'Granskning', count: statusCounts.review },
     { id: 'sent', label: 'Skickade', count: statusCounts.sent },
     { id: 'closed', label: 'Stängda', count: statusCounts.closed },
+    { id: 'all', label: 'Alla', count: statusCounts.all },
+    { id: 'billecta', label: 'Billecta', count: statusCounts.billecta },
+    { id: 'billecta-kivra', label: 'Billecta Kivra', count: statusCounts.billectaKivra },
     { id: 'archived', label: 'Arkiverade', count: archivedTickets.length || '...' },
   ];
 

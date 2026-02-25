@@ -79,6 +79,7 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [emailAccounts, setEmailAccounts] = useState<ReplyFromAccount[]>([]);
   const [selectedFromAccount, setSelectedFromAccount] = useState<string>('');
+  const [recipientEmail, setRecipientEmail] = useState(ticket.customerEmail);
   const [billectaModalOpen, setBillectaModalOpen] = useState(false);
   const [billectaSearchQuery, setBillectaSearchQuery] = useState('');
   const [billectaSearchType, setBillectaSearchType] = useState<'auto' | 'invoice' | 'orgno'>('auto');
@@ -185,7 +186,14 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
   };
 
   const handleSend = async () => {
+    if (!response) return;
     setIsSending(true);
+    
+    // Update recipient email if changed
+    if (recipientEmail !== ticket.customerEmail) {
+      await onUpdate(ticket.id, { customerEmail: recipientEmail });
+    }
+    
     await onSend(ticket.id, response, selectedFromAccount || undefined);
     setIsSending(false);
   };
@@ -203,6 +211,12 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
   const handleSpam = () => {
     if (confirm('Markera detta ärende som spam?')) {
       onSpam?.(ticket.id);
+    }
+  };
+
+  const handleClose = () => {
+    if (confirm('Stäng detta ärende? Du kan hitta det senare under fliken "Stängda".')) {
+      handleStatusChange('closed');
     }
   };
 
@@ -474,6 +488,18 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
       </div>
 
       <div className="p-6 border-t border-slate-200 dark:border-slate-700">
+        {/* Recipient Email Editor */}
+        <div className="mb-3 flex items-center gap-2">
+          <Mail className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
+          <span className="text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">Till:</span>
+          <input
+            type="email"
+            value={recipientEmail}
+            onChange={(e) => setRecipientEmail(e.target.value)}
+            className="flex-1 px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#7C5CFF]"
+            placeholder="mottagare@example.com"
+          />
+        </div>
         {/* Reply From Selector */}
         {emailAccounts.length > 0 && (
           <div className="mb-3 flex items-center gap-2">
@@ -499,13 +525,13 @@ export default function TicketDetail({ ticket, onUpdate, onGenerateAI, onSend, o
           <button
             onClick={handleSend}
             disabled={!response || isSending}
-            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
           >
             {isSending ? 'Sending...' : `Send Response${emailAccounts.length > 0 && selectedFromAccount ? ` (${emailAccounts.find(a => a.id === selectedFromAccount)?.email || ''})` : ''}`}
           </button>
           <button
-            onClick={() => handleStatusChange('closed')}
-            className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100"
+            onClick={handleClose}
+            className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-md font-medium transition-colors"
           >
             Close Ticket
           </button>
