@@ -39,8 +39,8 @@ async function syncSingleAccount(account: {
 
   const response = await gmail.users.messages.list({
     userId: 'me',
-    q: 'in:inbox',
-    maxResults: 100,
+    q: 'is:unread in:inbox',
+    maxResults: 10,
   });
 
   const messages = response.data.messages || [];
@@ -71,6 +71,21 @@ async function syncSingleAccount(account: {
         }
       }
 
+      // Check if ticket already exists for this Gmail message ID
+      const existingTicket = await prisma.ticket.findFirst({
+        where: {
+          tenantId: tenant.id,
+          originalMessage: {
+            contains: `[Gmail ID: ${message.id}]`,
+          },
+        },
+      });
+
+      if (existingTicket) {
+        console.log(`[Email Sync] Skipping duplicate message ${message.id} for ${account.email}`);
+        continue;
+      }
+
       const contextData = await contextAggregator.gatherContext(customerEmail, integrations as any);
 
       const ticket = await prisma.ticket.create({
@@ -79,7 +94,7 @@ async function syncSingleAccount(account: {
           customerEmail,
           customerName,
           subject,
-          originalMessage: `[Inbox account: ${account.email}]\n\n${body || 'No content'}`,
+          originalMessage: `[Gmail ID: ${message.id}]\n[Inbox account: ${account.email}]\n\n${body || 'No content'}`,
           status: 'new',
           priority: 'normal',
           contextData,
@@ -100,14 +115,13 @@ async function syncSingleAccount(account: {
         })
         .catch(console.error);
 
-      // Temporarily disabled: don't mark as read during full sync
-      // await gmail.users.messages.modify({
-      //   userId: 'me',
-      //   id: message.id!,
-      //   requestBody: {
-      //     removeLabelIds: ['UNREAD'],
-      //   },
-      // });
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: message.id!,
+        requestBody: {
+          removeLabelIds: ['UNREAD'],
+        },
+      });
     } catch (error) {
       console.error(`Error processing message ${message.id} for ${account.email}:`, error);
     }
