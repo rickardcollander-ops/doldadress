@@ -307,6 +307,19 @@ export default function SettingsPage() {
           onSave={handleSave}
           onToggle={handleToggle}
         />
+
+        <IntegrationCard
+          type="postman"
+          name="Postman"
+          description="Connect to Postman API for API testing and monitoring"
+          integration={getIntegration('postman')}
+          fields={[
+            { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'PMAK-...' },
+            { key: 'workspaceId', label: 'Workspace ID', type: 'text', placeholder: 'Your Postman Workspace ID' },
+          ]}
+          onSave={handleSave}
+          onToggle={handleToggle}
+        />
       </div>
     </div>
   );
