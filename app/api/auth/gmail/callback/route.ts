@@ -18,7 +18,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/settings/email-accounts?error=no_code', request.url));
     }
 
-    const callbackOrigin = process.env.GOOGLE_OAUTH_BASE_URL?.replace(/\/$/, '') || request.nextUrl.origin;
+    // Force HTTPS and remove trailing slash to match Google Console exactly
+    let callbackOrigin = process.env.GOOGLE_OAUTH_BASE_URL || request.nextUrl.origin;
+    callbackOrigin = callbackOrigin.replace(/\/$/, ''); // Remove trailing slash
+    
+    // Ensure HTTPS in production
+    if (!callbackOrigin.includes('localhost')) {
+      callbackOrigin = callbackOrigin.replace(/^http:/, 'https:');
+    }
+    
     const callbackUrl = `${callbackOrigin}/api/auth/gmail/callback`;
 
     const oauth2Client = new google.auth.OAuth2(

@@ -10,13 +10,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
 
-    const callbackOrigin = process.env.GOOGLE_OAUTH_BASE_URL?.replace(/\/$/, '') || request.nextUrl.origin;
+    // Force HTTPS and remove trailing slash to match Google Console exactly
+    let callbackOrigin = process.env.GOOGLE_OAUTH_BASE_URL || request.nextUrl.origin;
+    callbackOrigin = callbackOrigin.replace(/\/$/, ''); // Remove trailing slash
+    
+    // Ensure HTTPS in production
+    if (!callbackOrigin.includes('localhost')) {
+      callbackOrigin = callbackOrigin.replace(/^http:/, 'https:');
+    }
+    
     const callbackUrl = `${callbackOrigin}/api/auth/gmail/callback`;
 
     console.log('[Gmail OAuth DEBUG] GOOGLE_OAUTH_BASE_URL:', process.env.GOOGLE_OAUTH_BASE_URL);
     console.log('[Gmail OAuth DEBUG] request.nextUrl.origin:', request.nextUrl.origin);
-    console.log('[Gmail OAuth DEBUG] callbackOrigin:', callbackOrigin);
-    console.log('[Gmail OAuth DEBUG] callbackUrl:', callbackUrl);
+    console.log('[Gmail OAuth DEBUG] Final callbackOrigin:', callbackOrigin);
+    console.log('[Gmail OAuth DEBUG] Final callbackUrl:', callbackUrl);
 
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
