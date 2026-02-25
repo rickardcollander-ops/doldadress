@@ -294,11 +294,15 @@ export default function TicketsPage() {
   };
 
   const billectaTickets = tickets.filter(t => t.customerEmail.toLowerCase() === 'no-reply@billecta.com');
+  const billectaKivraTickets = billectaTickets.filter(t => t.subject.toLowerCase().includes('kivrameddelandet för faktura'));
+  const billectaOtherTickets = billectaTickets.filter(t => !t.subject.toLowerCase().includes('kivrameddelandet för faktura'));
   
   const filteredTickets = activeStatus === 'all'
     ? tickets.filter(t => t.customerEmail.toLowerCase() !== 'no-reply@billecta.com')
     : activeStatus === 'billecta'
-    ? billectaTickets
+    ? billectaOtherTickets
+    : activeStatus === 'billecta-kivra'
+    ? billectaKivraTickets
     : tickets.filter(t => t.status === activeStatus && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com');
 
   const filteredArchivedTickets = archivedTickets.filter(t => {
@@ -313,7 +317,8 @@ export default function TicketsPage() {
 
   const statusCounts = {
     all: tickets.filter(t => t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
-    billecta: billectaTickets.length,
+    billecta: billectaOtherTickets.length,
+    billectaKivra: billectaKivraTickets.length,
     new: tickets.filter(t => t.status === 'new' && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
     in_progress: tickets.filter(t => t.status === 'in_progress' && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
     review: tickets.filter(t => t.status === 'review' && t.customerEmail.toLowerCase() !== 'no-reply@billecta.com').length,
@@ -324,6 +329,7 @@ export default function TicketsPage() {
   const tabs = [
     { id: 'all', label: 'Alla', count: statusCounts.all },
     { id: 'billecta', label: 'Billecta', count: statusCounts.billecta },
+    { id: 'billecta-kivra', label: 'Billecta Kivra', count: statusCounts.billectaKivra },
     { id: 'new', label: 'Nya', count: statusCounts.new },
     { id: 'in_progress', label: 'Pågående', count: statusCounts.in_progress },
     { id: 'review', label: 'Granskning', count: statusCounts.review },
